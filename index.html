@@ -1,698 +1,672 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<h2 class="sr-only">Aerospace Project Journal — GitHub sync enabled, full session capture with AI merge</h2>
+<script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#090d12;--surface:#0d1117;--surface2:#111820;--border:#1c2435;--bl:#253040;
-  --accent:#00d4ff;--adim:rgba(0,212,255,0.07);
-  --tx:#bfcfdf;--txd:#4a5f72;--txb:#ddeaf8;
-  --gr:#00e5a0;--yw:#ffc84a;--rd:#ff5263;--pu:#9b72ff;--gh:#6e40c9;--or:#f97316;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",sans-serif;
+  --mono:"SF Mono","Fira Code","Roboto Mono",monospace;
+  --radius:10px;--radius-sm:6px;--radius-xs:4px;
+  --ease:cubic-bezier(.25,.1,.25,1);
+  --dur:160ms;
+  --sidebar:220px;
+  --accent:#0071E3;
+  --accent-h:#0077ED;
+  --c-work:#28A745;--c-idea:#0071E3;--c-dec:#D97706;--c-blk:#DC2626;--c-res:#7C3AED;
+  --bg-work:rgba(40,167,69,.1);--bg-idea:rgba(0,113,227,.1);--bg-dec:rgba(217,119,6,.1);--bg-blk:rgba(220,38,38,.1);--bg-res:rgba(124,58,237,.1);
 }
-body{background:var(--bg);color:var(--tx);font-family:'IBM Plex Sans',sans-serif;font-size:13px;min-height:100vh}
+body{font-family:var(--font);font-size:14px;background:var(--color-background-tertiary);color:var(--color-text-primary);min-height:600px;position:relative}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
 
-/* HEADER */
-.hdr{border-bottom:1px solid var(--border);padding:11px 20px;display:flex;align-items:center;justify-content:space-between;background:var(--surface);position:sticky;top:0;z-index:200}
-.hdr-l{display:flex;align-items:center;gap:10px}
-.logo{width:26px;height:26px;border:1.5px solid var(--gh);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--gh)}
-.hdr h1{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--txb);letter-spacing:2px;text-transform:uppercase}
-.hdr-sub{font-size:9px;color:var(--txd);letter-spacing:1px;font-family:'IBM Plex Mono',monospace;margin-top:1px}
-.hdr-r{display:flex;gap:7px;align-items:center}
-.pill{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;padding:3px 9px;border:1px solid;text-transform:uppercase;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:4px}
-.pill.off{color:var(--gh);border-color:var(--gh)}
-.pill.on{color:var(--gr);border-color:var(--gr)}
-.pill.busy{color:var(--yw);border-color:var(--yw)}
+/* ── APP SHELL ── */
+.app{display:flex;flex-direction:column;min-height:600px}
 
-/* LAYOUT */
-.layout{display:grid;grid-template-columns:190px 1fr;min-height:calc(100vh - 52px)}
+/* ── HEADER ── */
+.hdr{background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.hdr-l{display:flex;align-items:center;gap:12px}
+.hdr-mark{width:30px;height:30px;border-radius:var(--radius-sm);background:var(--color-text-primary);display:flex;align-items:center;justify-content:center}
+.hdr-mark svg{width:16px;height:16px;fill:var(--color-background-primary)}
+.hdr-info h1{font-size:14px;font-weight:600;letter-spacing:-.2px;color:var(--color-text-primary)}
+.hdr-info p{font-size:11px;color:var(--color-text-secondary);margin-top:1px;letter-spacing:.2px}
+.gh-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;border:0.5px solid var(--color-border-secondary);font-size:12px;font-weight:500;cursor:pointer;transition:all var(--dur) var(--ease);background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.gh-pill:hover{border-color:var(--color-border-primary);color:var(--color-text-primary)}
+.gh-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--color-border-secondary);flex-shrink:0;transition:background var(--dur) var(--ease)}
+.gh-pill.on .dot{background:#28A745}
+.gh-pill.on{color:var(--color-text-primary);border-color:rgba(40,167,69,.4)}
+.gh-pill.busy .dot{background:var(--accent);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
-/* SIDEBAR */
-.sb{border-right:1px solid var(--border);padding:12px 0;background:var(--surface);overflow-y:auto}
-.sb-s{padding:0 12px;margin-bottom:14px}
-.sb-l{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--txd);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)}
-.stat{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)}
-.stat:last-child{border-bottom:none}
-.stat span:first-child{color:var(--txd);font-size:11px}
-.sv{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent)}
-.sb-btn{width:100%;text-align:left;background:none;border:none;color:var(--txd);font-family:'IBM Plex Mono',monospace;font-size:9px;padding:5px 6px;cursor:pointer;letter-spacing:1px;text-transform:uppercase;border-radius:2px;display:flex;align-items:center;gap:5px;transition:all .15s;margin-bottom:1px}
-.sb-btn:hover,.sb-btn.act{background:var(--adim);color:var(--accent)}
-.dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
-.xbtn{width:100%;background:none;border:1px solid var(--border);color:var(--txd);font-family:'IBM Plex Mono',monospace;font-size:9px;padding:5px 8px;cursor:pointer;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:5px;margin-bottom:5px;text-align:left;transition:all .15s}
-.xbtn:hover{border-color:var(--accent);color:var(--accent)}
-.xbtn.gh:hover{border-color:var(--gh);color:var(--gh)}
-.xbtn.ai{border-color:rgba(155,114,255,.25);color:var(--pu)}
-.xbtn.ai:hover{border-color:var(--pu)}
+/* ── BODY LAYOUT ── */
+.body{display:flex;flex:1;min-height:0}
 
-/* MAIN */
-.main{padding:16px 20px;overflow-y:auto;max-height:calc(100vh - 52px)}
+/* ── SIDEBAR ── */
+.sb{width:var(--sidebar);flex-shrink:0;background:var(--color-background-primary);border-right:0.5px solid var(--color-border-tertiary);padding:16px 0;overflow-y:auto}
+.sb-sec{padding:0 14px;margin-bottom:20px}
+.sb-lbl{font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:8px;padding-bottom:6px;border-bottom:0.5px solid var(--color-border-tertiary)}
 
-/* CFG PANEL */
-.cfg{background:var(--surface);border:1px solid rgba(110,64,201,.3);padding:14px;margin-bottom:14px;position:relative;display:none}
+/* Stats */
+.stat{display:flex;justify-content:space-between;align-items:center;padding:5px 0}
+.stat-l{font-size:12px;color:var(--color-text-secondary)}
+.stat-v{font-size:13px;font-weight:600;font-family:var(--mono);color:var(--color-text-primary)}
+.stat-v.green{color:#28A745}.stat-v.amber{color:#D97706}
+
+/* Filter btns */
+.f-btn{width:100%;display:flex;align-items:center;gap:8px;padding:6px 8px;border:none;background:none;cursor:pointer;border-radius:var(--radius-sm);font-size:13px;color:var(--color-text-secondary);font-family:var(--font);transition:all var(--dur) var(--ease);text-align:left;margin-bottom:1px}
+.f-btn:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.f-btn.act{background:var(--color-background-secondary);color:var(--color-text-primary);font-weight:500}
+.f-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* Action btns */
+.a-btn{width:100%;display:flex;align-items:center;gap:8px;padding:7px 10px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-weight:500;color:var(--color-text-secondary);font-family:var(--font);transition:all var(--dur) var(--ease);margin-bottom:6px;text-align:left}
+.a-btn:hover{border-color:var(--color-border-primary);color:var(--color-text-primary);background:var(--color-background-primary)}
+.a-btn.accent-btn{background:var(--accent);color:#fff;border-color:transparent;font-weight:600}
+.a-btn.accent-btn:hover{background:var(--accent-h)}
+.a-btn svg{width:13px;height:13px;flex-shrink:0;opacity:.7}
+
+/* ── MAIN ── */
+.main{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:16px}
+
+/* ── CONFIG PANEL ── */
+.cfg{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--radius);padding:20px;display:none}
 .cfg.open{display:block}
-.cfg::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gh),transparent)}
-.cfg-t{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--gh);text-transform:uppercase;margin-bottom:11px}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
-.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px}
-.g1{margin-bottom:8px}
-.fg{display:flex;flex-direction:column;gap:3px}
-.fl{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--txd);letter-spacing:1px;text-transform:uppercase}
-input,select,textarea{background:var(--bg);border:1px solid var(--border);color:var(--txb);font-family:'IBM Plex Sans',sans-serif;font-size:12px;padding:5px 8px;outline:none;transition:border-color .15s;width:100%}
-input:focus,select:focus,textarea:focus{border-color:var(--accent)}
-select option{background:#0d1117}
-textarea{resize:vertical;font-size:12px;line-height:1.6}
+.cfg-hdr{font-size:13px;font-weight:600;color:var(--color-text-primary);margin-bottom:4px}
+.cfg-sub{font-size:12px;color:var(--color-text-secondary);margin-bottom:16px;line-height:1.5}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fl{font-size:11px;font-weight:500;letter-spacing:.3px;color:var(--color-text-secondary)}
+input[type=text],input[type=password],select,textarea{background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--radius-sm);color:var(--color-text-primary);font-family:var(--font);font-size:13px;padding:8px 11px;width:100%;outline:none;transition:border-color var(--dur) var(--ease)}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,113,227,.12)}
+select option{background:var(--color-background-primary)}
+textarea{resize:vertical;line-height:1.6}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.full{grid-column:1/-1}
+.row-gap{display:flex;flex-direction:column;gap:10px}
 
-/* CAPTURE PANEL */
-.panel{background:var(--surface);border:1px solid var(--border);padding:14px;margin-bottom:16px;position:relative}
-.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent)}
-.pt{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:11px}
-.tip{background:var(--adim);border:1px solid rgba(0,212,255,.1);padding:8px 11px;margin-bottom:11px;font-size:11px;color:var(--txd);line-height:1.6}
-.tip strong{color:var(--accent);font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:2px}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);transition:all var(--dur) var(--ease)}
+.btn:hover{border-color:var(--color-border-primary);color:var(--color-text-primary);transform:translateY(-1px)}
+.btn:active{transform:translateY(0) scale(.98)}
+.btn-p{background:var(--accent);color:#fff;border-color:transparent;font-weight:600}
+.btn-p:hover{background:var(--accent-h);color:#fff}
+.btn-gh{background:#24292F;color:#fff;border-color:transparent;font-weight:600}
+.btn-gh:hover{background:#32383E;color:#fff}
+.btn-row{display:flex;gap:8px;justify-content:flex-end;padding-top:16px;border-top:0.5px solid var(--color-border-tertiary);margin-top:4px}
 
-/* STRUCTURED OUTPUT */
-.ai-out{background:var(--bg);border:1px solid rgba(155,114,255,.25);padding:14px;margin-top:12px;position:relative;display:none}
-.ai-out.show{display:block}
-.ai-out::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--pu),transparent)}
-.ai-out-t{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--pu);text-transform:uppercase;margin-bottom:11px;display:flex;align-items:center;gap:7px}
-.domain-badge{font-family:'IBM Plex Mono',monospace;font-size:8px;padding:2px 7px;border:1px solid var(--pu);color:var(--pu);letter-spacing:1px;text-transform:uppercase}
-.tag-cloud{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
-.atag{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 7px;background:rgba(155,114,255,.1);color:var(--pu);border:1px solid rgba(155,114,255,.2);cursor:pointer;transition:all .15s}
-.atag:hover{background:rgba(155,114,255,.2)}
-.atag.rm{opacity:.4;text-decoration:line-through}
-.sec-block{border:1px solid var(--border);margin-bottom:8px}
-.sec-hd{background:var(--surface2);padding:6px 10px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid var(--border)}
-.sec-hd-t{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--txb)}
-.sec-hd-icon{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txd)}
-.sec-body{padding:8px 10px;font-size:12px;line-height:1.7;color:var(--tx);white-space:pre-wrap;display:block}
-.sec-body.hide{display:none}
+/* ── COMMIT STRIP ── */
+.cstrip{display:none;padding:10px 14px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--radius-sm);font-size:12px;color:var(--color-text-secondary)}
+.cstrip.show{display:flex;align-items:center;gap:8px}
+.cstrip-dot{width:6px;height:6px;border-radius:50%;background:#28A745;flex-shrink:0}
+.cstrip a{color:var(--accent);text-decoration:none;font-weight:500}.cstrip a:hover{text-decoration:underline}
 
-/* BUTTONS */
-.btn{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:6px 13px;cursor:pointer;border:none;transition:all .15s}
-.bp{background:var(--accent);color:#000;font-weight:600}.bp:hover{background:#00b8d9}
-.bs{background:transparent;border:1px solid var(--bl);color:var(--txd)}.bs:hover{border-color:var(--accent);color:var(--accent)}
-.bgh{background:var(--gh);color:#fff;font-weight:600}.bgh:hover{background:#5a30b5}
-.bai{background:var(--pu);color:#fff;font-weight:600}.bai:hover{background:#8055e8}
-.brow{display:flex;gap:6px;justify-content:flex-end;margin-top:11px;flex-wrap:wrap}
-.btn:disabled{opacity:.4;cursor:not-allowed}
+/* ── FORM PANEL ── */
+.form-panel{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--radius);overflow:hidden}
+.form-panel-hdr{padding:16px 20px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between}
+.form-panel-hdr h2{font-size:14px;font-weight:600;color:var(--color-text-primary)}
+.form-panel-hdr span{font-size:11px;color:var(--color-text-tertiary);font-family:var(--mono)}
+.form-body{padding:20px;display:flex;flex-direction:column;gap:16px}
 
-/* COMMIT STRIP */
-.cs{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txd);padding:6px 10px;background:rgba(110,64,201,.06);border:1px solid rgba(110,64,201,.15);margin-bottom:12px;display:none}
-.cs.show{display:block}
-.cs a{color:var(--gh);text-decoration:none}.cs a:hover{text-decoration:underline}
+/* Form sections */
+.fsec{display:flex;flex-direction:column;gap:10px}
+.fsec-lbl{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--color-text-tertiary);padding-bottom:8px;border-bottom:0.5px solid var(--color-border-tertiary)}
 
-/* ENTRY LIST */
-.elst-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.elst-t{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--txd);letter-spacing:2px;text-transform:uppercase}
-.ec{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent)}
-.sr{display:flex;gap:6px;margin-bottom:12px}
-.sr input{flex:1;background:var(--surface)}
-.entry{background:var(--surface);border:1px solid var(--border);margin-bottom:9px;position:relative;overflow:hidden}
-.ebar{position:absolute;left:0;top:0;bottom:0;width:3px}
-.ehdr{padding:9px 11px 8px 15px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;border-bottom:1px solid var(--border)}
-.emeta{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
-.edate{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txd)}
-.ebadge{font-family:'IBM Plex Mono',monospace;font-size:8px;padding:2px 5px;letter-spacing:1px;text-transform:uppercase;border:1px solid}
-.eauth{font-family:'IBM Plex Mono',monospace;font-size:8px;padding:2px 5px;color:var(--txd);border:1px solid var(--border)}
-.edomain{font-family:'IBM Plex Mono',monospace;font-size:8px;padding:2px 5px;background:rgba(249,115,22,.08);color:var(--or);border:1px solid rgba(249,115,22,.2)}
-.esync{font-family:'IBM Plex Mono',monospace;font-size:8px}
-.esync.ok{color:var(--gr)}.esync.no{color:var(--yw)}
-.etitle{font-size:13px;font-weight:500;color:var(--txb);margin-top:2px}
-.eacts{display:flex;gap:4px;flex-shrink:0}
-.ibtn{background:none;border:1px solid var(--border);color:var(--txd);font-size:9px;padding:3px 6px;cursor:pointer;font-family:'IBM Plex Mono',monospace;transition:all .15s}
-.ibtn:hover{border-color:var(--rd);color:var(--rd)}
-.ibtn.sync:hover{border-color:var(--gh);color:var(--gh)}
-.ebody{padding:10px 11px 10px 15px}
-.esl{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--txd);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2px;margin-top:7px}
-.esl:first-child{margin-top:0}
-.etxt{font-size:12px;line-height:1.6;color:var(--tx);white-space:pre-wrap}
-.etag-row{display:flex;gap:3px;flex-wrap:wrap;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)}
-.etag{font-family:'IBM Plex Mono',monospace;font-size:8px;padding:2px 5px;background:var(--adim);color:var(--accent)}
-.type-work{color:var(--gr);border-color:var(--gr)}.bar-work{background:var(--gr)}
-.type-ideation{color:var(--accent);border-color:var(--accent)}.bar-ideation{background:var(--accent)}
-.type-decision{color:var(--yw);border-color:var(--yw)}.bar-decision{background:var(--yw)}
-.type-blocker{color:var(--rd);border-color:var(--rd)}.bar-blocker{background:var(--rd)}
-.type-research{color:var(--pu);border-color:var(--pu)}.bar-research{background:var(--pu)}
-.empty{text-align:center;padding:36px;border:1px dashed var(--border);color:var(--txd);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px}
+/* Tip box */
+.tip{background:var(--color-background-secondary);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--color-text-secondary);line-height:1.6;border-left:2px solid var(--accent)}
+.tip strong{color:var(--color-text-primary);font-weight:600;display:block;margin-bottom:2px;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
 
-.toast{position:fixed;bottom:14px;right:14px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;padding:7px 12px;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;z-index:999;max-width:310px}
-.toast.show{opacity:1;transform:translateY(0)}
-.spin{display:inline-block;width:8px;height:8px;border:1.5px solid rgba(255,255,255,.15);border-top-color:currentColor;border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle}
+/* Paste area */
+.paste-wrap{background:var(--color-background-secondary);border:0.5px dashed var(--color-border-secondary);border-radius:var(--radius-sm);padding:12px 14px}
+.paste-lbl{font-size:11px;font-weight:500;color:var(--color-text-tertiary);margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.paste-wrap textarea{background:transparent;border:none;padding:0;font-size:12px}
+.paste-wrap textarea:focus{box-shadow:none}
+
+/* ── ENTRIES ── */
+.entries-hdr{display:flex;align-items:center;justify-content:space-between}
+.entries-hdr h2{font-size:14px;font-weight:600;color:var(--color-text-primary)}
+.entry-count{font-size:12px;color:var(--color-text-tertiary);font-family:var(--mono)}
+.search-wrap{position:relative}
+.search-wrap input{padding-left:34px}
+.search-ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--color-text-tertiary);pointer-events:none}
+
+/* Entry card */
+.entry{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--radius);overflow:hidden;transition:border-color var(--dur) var(--ease),transform var(--dur) var(--ease)}
+.entry:hover{border-color:var(--color-border-secondary);transform:translateY(-1px)}
+.e-bar{height:3px;width:100%}
+.e-bar.work{background:var(--c-work)}.e-bar.ideation{background:var(--c-idea)}.e-bar.decision{background:var(--c-dec)}.e-bar.blocker{background:var(--c-blk)}.e-bar.research{background:var(--c-res)}
+.ehdr{padding:14px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.emeta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.etitle{font-size:14px;font-weight:600;color:var(--color-text-primary);letter-spacing:-.1px}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;line-height:1.4}
+.badge-date{color:var(--color-text-tertiary);font-family:var(--mono);font-size:10px}
+.badge-type{background:var(--bg-work);color:var(--c-work)}.badge-type.ideation{background:var(--bg-idea);color:var(--c-idea)}.badge-type.decision{background:var(--bg-dec);color:var(--c-dec)}.badge-type.blocker{background:var(--bg-blk);color:var(--c-blk)}.badge-type.research{background:var(--bg-res);color:var(--c-res)}
+.badge-author{background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary)}
+.badge-task{background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary);font-family:var(--mono);font-size:10px}
+.sync-ok{color:#28A745;font-size:11px;font-weight:500;display:flex;align-items:center;gap:4px}
+.sync-no{color:var(--color-text-tertiary);font-size:11px}
+.sync-ok a{color:#28A745;text-decoration:none;font-weight:600}.sync-ok a:hover{text-decoration:underline}
+
+/* Entry actions */
+.e-acts{display:flex;gap:4px;flex-shrink:0}
+.ico-btn{background:none;border:0.5px solid var(--color-border-tertiary);border-radius:var(--radius-xs);padding:4px 8px;cursor:pointer;font-size:11px;font-family:var(--font);color:var(--color-text-tertiary);transition:all var(--dur) var(--ease);white-space:nowrap}
+.ico-btn:hover{border-color:var(--color-border-primary);color:var(--color-text-primary)}
+.ico-btn.gh-btn:hover{border-color:var(--accent);color:var(--accent)}
+.ico-btn.del:hover{border-color:#DC2626;color:#DC2626}
+
+/* Entry body */
+.ebody{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.e-field{display:flex;flex-direction:column;gap:3px}
+.e-lbl{font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--color-text-tertiary)}
+.e-val{font-size:13px;line-height:1.6;color:var(--color-text-secondary);white-space:pre-wrap}
+.e-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding-top:10px;border-top:0.5px solid var(--color-border-tertiary)}
+.e-metric{background:var(--color-background-secondary);border-radius:var(--radius-sm);padding:10px 12px}
+.e-metric .e-lbl{margin-bottom:4px}
+.e-metric .e-val{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--color-text-primary)}
+.tag-row{display:flex;gap:4px;flex-wrap:wrap;padding-top:10px;border-top:0.5px solid var(--color-border-tertiary)}
+.tag{display:inline-flex;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;background:var(--color-background-secondary);color:var(--color-text-tertiary);border:0.5px solid var(--color-border-tertiary)}
+
+/* ── EMPTY STATE ── */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;border:0.5px dashed var(--color-border-tertiary);border-radius:var(--radius);gap:8px}
+.empty-icon{width:40px;height:40px;border-radius:10px;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;margin-bottom:4px}
+.empty-icon svg{width:20px;height:20px;color:var(--color-text-tertiary)}
+.empty h3{font-size:14px;font-weight:600;color:var(--color-text-primary)}
+.empty p{font-size:13px;color:var(--color-text-secondary);text-align:center}
+
+/* ── MODAL ── */
+.mo-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity var(--dur) var(--ease)}
+.mo-overlay.show{opacity:1;pointer-events:all}
+.mbox{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:14px;width:560px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;transform:scale(.97) translateY(8px);transition:transform var(--dur) var(--ease);overflow:hidden}
+.mo-overlay.show .mbox{transform:scale(1) translateY(0)}
+.m-hdr{padding:16px 20px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between}
+.m-hdr h3{font-size:14px;font-weight:600;color:var(--color-text-primary)}
+.m-close{background:var(--color-background-secondary);border:none;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--color-text-secondary);transition:all var(--dur) var(--ease)}
+.m-close:hover{background:var(--color-background-tertiary);color:var(--color-text-primary)}
+.m-body{padding:20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:12px}
+.m-ftr{padding:14px 20px;border-top:0.5px solid var(--color-border-tertiary);display:flex;gap:8px;justify-content:flex-end}
+.ai-stat{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--color-text-secondary)}
+.spin{width:14px;height:14px;border:2px solid var(--color-border-tertiary);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0}
 @keyframes sp{to{transform:rotate(360deg)}}
-.analyzing{display:none;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--pu);padding:10px 0}
-.analyzing.show{display:flex}
-code{font-family:'IBM Plex Mono',monospace;font-size:11px;background:rgba(255,255,255,.05);padding:1px 5px;color:var(--accent)}
-</style>
-</head>
-<body>
+.rprev{font-size:12px;line-height:1.7;color:var(--color-text-secondary);white-space:pre-wrap;background:var(--color-background-secondary);padding:12px;border-radius:var(--radius-sm);max-height:40vh;overflow-y:auto;border:0.5px solid var(--color-border-tertiary)}
 
-<div class="hdr">
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:500;opacity:0;transform:translateY(8px) scale(.97);transition:all .25s var(--ease);pointer-events:none;z-index:200;max-width:280px;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.toast.show{opacity:1;transform:translateY(0) scale(1)}
+
+input[type=date]{color-scheme:light dark}
+</style>
+
+<div class="app">
+
+<!-- HEADER -->
+<header class="hdr">
   <div class="hdr-l">
-    <div class="logo">GH</div>
-    <div>
-      <h1>Smart Project Journal</h1>
-      <div class="hdr-sub">AI Structures · GitHub Pushes · Always Current</div>
+    <div class="hdr-mark">
+      <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+    </div>
+    <div class="hdr-info">
+      <h1>Project Journal</h1>
+      <p>Aerospace / Avionics — Full Capture & GitHub Sync</p>
     </div>
   </div>
-  <div class="hdr-r">
-    <div id="gh-pill" class="pill off" onclick="toggleCfg()">⬡ Connect GitHub</div>
+  <div id="ghpill" class="gh-pill" onclick="toggleCfg()">
+    <span class="dot"></span>
+    <span id="gh-pill-txt">Connect GitHub</span>
   </div>
-</div>
+</header>
 
-<div class="layout">
+<div class="body">
 
 <!-- SIDEBAR -->
-<div class="sb">
-  <div class="sb-s">
-    <div class="sb-l">Stats</div>
-    <div class="stat"><span>Total</span><span class="sv" id="st-total">0</span></div>
-    <div class="stat"><span>Synced</span><span class="sv" style="color:var(--gr)" id="st-synced">0</span></div>
-    <div class="stat"><span>Pending</span><span class="sv" style="color:var(--yw)" id="st-pend">0</span></div>
-    <div class="stat"><span>Members</span><span class="sv" id="st-mem">0</span></div>
-    <div class="stat"><span>Tasks</span><span class="sv" id="st-tasks">0</span></div>
+<aside class="sb">
+  <div class="sb-sec">
+    <div class="sb-lbl">Overview</div>
+    <div class="stat"><span class="stat-l">Total entries</span><span class="stat-v" id="st-total">0</span></div>
+    <div class="stat"><span class="stat-l">Synced</span><span class="stat-v green" id="st-synced">0</span></div>
+    <div class="stat"><span class="stat-l">Pending</span><span class="stat-v amber" id="st-pending">0</span></div>
   </div>
-  <div class="sb-s">
-    <div class="sb-l">Filter</div>
-    <button class="sb-btn act" onclick="setF('all',this)"><span class="dot"></span>All</button>
-    <button class="sb-btn" onclick="setF('work',this)"><span class="dot" style="color:var(--gr)"></span>Work Done</button>
-    <button class="sb-btn" onclick="setF('ideation',this)"><span class="dot" style="color:var(--accent)"></span>Ideation</button>
-    <button class="sb-btn" onclick="setF('decision',this)"><span class="dot" style="color:var(--yw)"></span>Decision</button>
-    <button class="sb-btn" onclick="setF('blocker',this)"><span class="dot" style="color:var(--rd)"></span>Blocker</button>
-    <button class="sb-btn" onclick="setF('research',this)"><span class="dot" style="color:var(--pu)"></span>Research</button>
+  <div class="sb-sec">
+    <div class="sb-lbl">By type</div>
+    <div class="stat"><span class="stat-l">Work done</span><span class="stat-v" id="st-work">0</span></div>
+    <div class="stat"><span class="stat-l">Decisions</span><span class="stat-v" id="st-decision">0</span></div>
+    <div class="stat"><span class="stat-l">Research</span><span class="stat-v" id="st-research">0</span></div>
+    <div class="stat"><span class="stat-l">Ideation</span><span class="stat-v" id="st-ideation">0</span></div>
+    <div class="stat"><span class="stat-l">Blockers</span><span class="stat-v" id="st-blocker">0</span></div>
   </div>
-  <div class="sb-s">
-    <div class="sb-l">GitHub</div>
-    <button class="xbtn gh" onclick="pushAllPending()"><span>↑</span>Push All Pending</button>
-    <button class="xbtn gh" onclick="openRepo()"><span>⎋</span>Open Repo</button>
+  <div class="sb-sec">
+    <div class="sb-lbl">Filter</div>
+    <button class="f-btn act" onclick="setFilter('all',this)"><span class="f-dot" style="background:var(--color-text-tertiary)"></span>All entries</button>
+    <button class="f-btn" onclick="setFilter('work',this)"><span class="f-dot" style="background:var(--c-work)"></span>Work done</button>
+    <button class="f-btn" onclick="setFilter('ideation',this)"><span class="f-dot" style="background:var(--c-idea)"></span>Ideation</button>
+    <button class="f-btn" onclick="setFilter('decision',this)"><span class="f-dot" style="background:var(--c-dec)"></span>Decision</button>
+    <button class="f-btn" onclick="setFilter('blocker',this)"><span class="f-dot" style="background:var(--c-blk)"></span>Blocker</button>
+    <button class="f-btn" onclick="setFilter('research',this)"><span class="f-dot" style="background:var(--c-res)"></span>Research</button>
   </div>
-  <div class="sb-s">
-    <div class="sb-l">Generate</div>
-    <button class="xbtn ai" onclick="genPOC()">✦ POC Document</button>
+  <div class="sb-sec">
+    <div class="sb-lbl">GitHub</div>
+    <button class="a-btn" onclick="pushAllPending()">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zm.5 4.75a.75.75 0 0 0-1.5 0v3.69L5.03 6.97a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.5 8.44V4.75z"/></svg>
+      Push all pending
+    </button>
+    <button class="a-btn" onclick="openRepo()">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3.75 2h8.5c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 12.25 14h-8.5A1.75 1.75 0 0 1 2 12.25v-8.5C2 2.784 2.784 2 3.75 2zm0 1.5a.25.25 0 0 0-.25.25v8.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25h-8.5zm5 3.72a.75.75 0 0 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L3.97 9.78a.75.75 0 1 1 1.06-1.06l1.72 1.72 2.72-2.72a.75.75 0 0 1-.72.28z"/></svg>
+      Open repository
+    </button>
   </div>
-  <div class="sb-s">
-    <div class="sb-l">Manage</div>
-    <button class="sb-btn" onclick="if(confirm('Clear all local?'))clearAll()"><span class="dot" style="color:var(--rd)"></span>Clear Local</button>
+  <div class="sb-sec">
+    <div class="sb-lbl">Generate</div>
+    <button class="a-btn accent-btn" onclick="openPOC()">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M11.93 8.5a4.002 4.002 0 0 1-7.86 0H.75a.75.75 0 0 1 0-1.5h3.32a4.002 4.002 0 0 1 7.86 0h3.32a.75.75 0 0 1 0 1.5zm-1.43-.75a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0z"/></svg>
+      POC document
+    </button>
   </div>
-</div>
+  <div class="sb-sec">
+    <div class="sb-lbl">Manage</div>
+    <button class="a-btn" onclick="if(confirm('Clear all local entries?'))clearAll()">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M11 1.75V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75zM6.5 1.75v1.25h3V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25zM4.997 6.5a.75.75 0 1 0-1.493.145L4.61 13.47a1.75 1.75 0 0 0 1.743 1.53h3.294a1.75 1.75 0 0 0 1.742-1.53l1.107-6.825a.75.75 0 1 0-1.492-.144L9.9 13h-3.8L4.997 6.5z"/></svg>
+      Clear local data
+    </button>
+  </div>
+</aside>
 
-<!-- MAIN -->
-<div class="main">
+<!-- MAIN CONTENT -->
+<main class="main">
 
   <!-- GitHub Config -->
-  <div class="cfg" id="cfg">
-    <div class="cfg-t">⬡ GitHub Configuration</div>
-    <div class="tip" style="margin-bottom:10px">
-      <strong>📁 Auto Folder Structure</strong>
-      <code>journal/{member}/{task-slug}.md</code> — each session merges into the task's living doc. AI tallies old vs new data and keeps everything.
+  <div class="cfg" id="cfg-panel">
+    <div class="cfg-hdr">GitHub Connection</div>
+    <div class="cfg-sub">Each member gets their own folder: <code style="font-family:var(--mono);font-size:11px;background:var(--color-background-secondary);padding:2px 5px;border-radius:4px">journal/{name}/{task}.md</code> — new sessions AI-merge with existing task files.</div>
+    <div class="g2" style="margin-bottom:10px">
+      <div class="fg"><span class="fl">Personal Access Token</span><input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx"></div>
+      <div class="fg"><span class="fl">Repository (owner/repo)</span><input type="text" id="gh-repo" placeholder="org/avionics-project"></div>
+      <div class="fg"><span class="fl">Branch</span><input type="text" id="gh-branch" value="main"></div>
+      <div class="fg"><span class="fl">Base folder</span><input type="text" id="gh-base" value="journal"></div>
     </div>
-    <div class="g2">
-      <div class="fg"><span class="fl">Personal Access Token (repo scope)</span><input type="password" id="gh-tok" placeholder="ghp_xxxxxxxxxxxx"></div>
-      <div class="fg"><span class="fl">Repository (owner/repo)</span><input id="gh-repo" placeholder="org/avionics-project"></div>
-      <div class="fg"><span class="fl">Branch</span><input id="gh-br" value="main"></div>
-      <div class="fg"><span class="fl">Base Folder</span><input id="gh-base" value="journal"></div>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-      <span id="cfg-st" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--txd)"></span>
-      <div style="display:flex;gap:6px">
-        <button class="btn bs" onclick="toggleCfg()">Cancel</button>
-        <button class="btn bs" onclick="testGH()">Test</button>
-        <button class="btn bgh" onclick="saveGH()">Save & Connect</button>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span id="cfg-status" style="font-size:12px;color:var(--color-text-secondary)"></span>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="toggleCfg()">Cancel</button>
+        <button class="btn" onclick="testGH()">Test connection</button>
+        <button class="btn btn-gh" onclick="saveGH()">Save & connect</button>
       </div>
     </div>
   </div>
 
   <!-- Commit strip -->
-  <div class="cs" id="cs"></div>
+  <div class="cstrip" id="cstrip">
+    <span class="cstrip-dot"></span>
+    <span id="cstrip-txt"></span>
+  </div>
 
-  <!-- CAPTURE PANEL -->
-  <div class="panel">
-    <div class="pt">▸ Session Capture</div>
-    <div class="tip">
-      <strong>💡 How to use</strong>
-      Dump everything you did in the Raw Notes field — costs, part numbers, vendor names, specs, decisions, whatever. No format required. Click <strong>✦ Analyse</strong> and Claude will read the context, figure out what kind of task it is, structure it properly, and generate the right tags automatically.
+  <!-- FORM -->
+  <div class="form-panel">
+    <div class="form-panel-hdr">
+      <h2>Log session</h2>
+      <span>Full capture — no omissions</span>
     </div>
-
-    <div class="g4" style="margin-bottom:8px">
-      <div class="fg"><span class="fl">Your Name</span><input id="f-author" placeholder="e.g. Deeraj"></div>
-      <div class="fg"><span class="fl">Date</span><input type="date" id="f-date"></div>
-      <div class="fg"><span class="fl">Task / Module Name</span><input id="f-task" placeholder="e.g. Battery Pack Design"></div>
-      <div class="fg"><span class="fl">Type</span>
-        <select id="f-type">
-          <option value="work">Work Done</option>
-          <option value="ideation">Ideation</option>
-          <option value="decision">Decision</option>
-          <option value="research">Research</option>
-          <option value="blocker">Blocker</option>
-        </select>
+    <div class="form-body">
+      <div class="tip">
+        <strong>End-of-session prompt</strong>
+        Tell Claude: "Log full session for task [X]. Include all costs, materials, vendors, specs, decisions with full context — nothing summarized." Then paste the output and click Parse.
       </div>
-    </div>
 
-    <div class="g1">
-      <div class="fg">
-        <span class="fl">Raw Session Notes — dump everything, no format required</span>
-        <textarea id="f-raw" style="min-height:140px" placeholder="Examples of what to write here:
-
-→ Battery: Looked at Li-NMC cells from EVE Energy. 50Ah, 3.65V nominal. Got quote from Encon India Pvt Ltd, Mumbai — ₹4,200/cell, MOQ 10. Lead time 3 weeks. Also checked Everon but their price was ₹4,800 with 6 week lead. Decided on EVE via Encon. Need to confirm BMS compatibility with Orion BMS2.
-
-→ Airframe: Reviewed CFRP layup schedule with structural team. Decided on 8-ply [0/45/-45/90]s for main spar. Vendor Hindoostan Mills can supply prepreg at ₹12,500/kg. Need 14kg for prototype.
-
-→ Avionics: Discussed DO-178C DAL-B compliance path for flight management module. RTCA DO-254 applies to FPGA. Using NXP S32K344 MCU. Asked Elbit for quote on ARINC 429 transceiver.
-
-Write whatever you have — AI will structure it correctly."></textarea>
+      <div class="fsec">
+        <div class="fsec-lbl">Identity</div>
+        <div class="g4">
+          <div class="fg"><span class="fl">Your name</span><input id="f-author" placeholder="Deeraj"></div>
+          <div class="fg"><span class="fl">Date</span><input type="date" id="f-date"></div>
+          <div class="fg"><span class="fl">Task / module</span><input id="f-task" placeholder="Sensor Architecture"></div>
+          <div class="fg"><span class="fl">Entry type</span>
+            <select id="f-type">
+              <option value="work">Work done</option>
+              <option value="ideation">Ideation</option>
+              <option value="decision">Decision</option>
+              <option value="research">Research</option>
+              <option value="blocker">Blocker</option>
+            </select>
+          </div>
+        </div>
+        <div class="fg"><span class="fl">Session title</span><input id="f-title" placeholder="Brief description of this session"></div>
       </div>
-    </div>
 
-    <div class="analyzing" id="analysing">
-      <div class="spin"></div>
-      <span id="anlz-txt">Claude is reading your notes and structuring them...</span>
-    </div>
-
-    <!-- AI Structured Output -->
-    <div class="ai-out" id="ai-out">
-      <div class="ai-out-t">
-        ✦ AI Structured Output
-        <span class="domain-badge" id="out-domain">—</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--txd);margin-left:auto">click sections to expand/collapse</span>
+      <div class="fsec">
+        <div class="fsec-lbl">Session detail</div>
+        <div class="fg"><span class="fl">Full summary — everything discussed, explored, built. No omissions.</span><textarea id="f-summary" style="min-height:80px" placeholder="Be exhaustive. Context, approach, what worked, what didn't, references..."></textarea></div>
       </div>
-      <div class="fl" style="margin-bottom:5px">Auto-generated tags (click to remove)</div>
-      <div class="tag-cloud" id="out-tags"></div>
-      <div id="out-sections"></div>
-      <div class="brow">
-        <button class="btn bs" onclick="reanalyse()">↺ Re-analyse</button>
-        <button class="btn bs" onclick="document.getElementById('ai-out').classList.remove('show')">Clear</button>
-        <button class="btn bgh" id="btn-push" onclick="saveAndPush()">↑ Push to GitHub</button>
-      </div>
-    </div>
 
-    <div class="brow" id="analyse-row">
-      <button class="btn bs" onclick="clearForm()">Clear</button>
-      <button class="btn bai" onclick="analyseNotes()">✦ Analyse & Structure</button>
+      <div class="fsec">
+        <div class="fsec-lbl">Financial & cost</div>
+        <div class="g3">
+          <div class="fg"><span class="fl">Budget allocated</span><input id="f-budget" placeholder="₹2,50,000"></div>
+          <div class="fg"><span class="fl">Cost this session</span><input id="f-cost" placeholder="₹18,500"></div>
+          <div class="fg"><span class="fl">Total spent to date</span><input id="f-spent" placeholder="₹43,000"></div>
+        </div>
+        <div class="fg"><span class="fl">Cost breakdown / quotes received</span><textarea id="f-costdetail" placeholder="Itemise: vendor, item, price, qty, unit..."></textarea></div>
+      </div>
+
+      <div class="fsec">
+        <div class="fsec-lbl">Materials, components & vendors</div>
+        <div class="g2">
+          <div class="fg"><span class="fl">Materials / components</span><textarea id="f-materials" placeholder="Name, spec, qty, source, status (finalized/shortlisted)..."></textarea></div>
+          <div class="fg"><span class="fl">Vendors / dealers / contacts</span><textarea id="f-vendors" placeholder="Vendor, location, contact, lead time, MOQ, price..."></textarea></div>
+        </div>
+      </div>
+
+      <div class="fsec">
+        <div class="fsec-lbl">Technical details</div>
+        <div class="fg"><span class="fl">Specifications / architecture / design decisions</span><textarea id="f-tech" placeholder="Standards (DO-178C, ARINC, etc.), architecture choices, interface specs, constraints..."></textarea></div>
+        <div class="g2">
+          <div class="fg"><span class="fl">Decisions made — with full rationale</span><textarea id="f-decisions" placeholder="Decision → why → alternatives → trade-offs..."></textarea></div>
+          <div class="fg"><span class="fl">Open questions / blockers</span><textarea id="f-blockers" placeholder="Unresolved, who needs to answer, dependency..."></textarea></div>
+        </div>
+      </div>
+
+      <div class="fsec">
+        <div class="fsec-lbl">Actions & timeline</div>
+        <div class="g2">
+          <div class="fg"><span class="fl">Next steps — owner + deadline</span><textarea id="f-next" placeholder="Task → who → by when..."></textarea></div>
+          <div class="fg"><span class="fl">Dependencies / waiting on</span><textarea id="f-deps" placeholder="What are you blocked on before you can proceed..."></textarea></div>
+        </div>
+        <div class="fg"><span class="fl">Tags</span><input id="f-tags" placeholder="DO-178C, sensor, MEMS, ARINC-429, Phase-1"></div>
+      </div>
+
+      <div class="paste-wrap">
+        <div class="paste-lbl">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M5.75 1a.75.75 0 0 0-.75.75v3c0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75v-3a.75.75 0 0 0-.75-.75h-4.5zm.75 3V2.5h3V4h-3zm-2.874-.467a.75.75 0 0 0-.752-1.298A1.75 1.75 0 0 0 2 4.75v7.5c0 .966.784 1.75 1.75 1.75h8.5A1.75 1.75 0 0 0 14 12.25v-7.5a1.75 1.75 0 0 0-.874-1.515.75.75 0 1 0-.752 1.298.25.25 0 0 1 .126.217v7.5a.25.25 0 0 1-.25.25h-8.5a.25.25 0 0 1-.25-.25v-7.5a.25.25 0 0 1 .126-.217z"/></svg>
+          Paste Claude's full log here — auto-parses all fields
+        </div>
+        <textarea id="f-paste" placeholder="Paste Claude's output → Parse fills all fields above automatically" style="min-height:48px"></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn" onclick="parsePaste()">Parse paste</button>
+        <button class="btn" onclick="clearForm()">Clear form</button>
+        <button class="btn btn-p" onclick="addEntry(false)">Save locally</button>
+        <button class="btn btn-gh" onclick="addEntry(true)">Push to GitHub</button>
+      </div>
     </div>
   </div>
 
-  <!-- ENTRY LIST -->
-  <div class="elst-hdr">
-    <span class="elst-t">Session Log</span>
-    <span class="ec" id="ecount">0 entries</span>
+  <!-- Entry list -->
+  <div class="entries-hdr">
+    <h2>Session log</h2>
+    <span class="entry-count" id="ecount">0 entries</span>
   </div>
-  <div class="sr"><input id="srch" placeholder="Search by task, author, domain, tag, vendor, spec..." oninput="render()"></div>
-  <div id="elist"></div>
+
+  <div class="search-wrap">
+    <svg class="search-ico" viewBox="0 0 16 16" fill="currentColor"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215zm-5.44-1.19a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9z"/></svg>
+    <input id="srch" placeholder="Search by title, author, task, cost, vendor..." oninput="render()">
+  </div>
+
+  <div id="elist" style="display:flex;flex-direction:column;gap:10px"></div>
+
+</main>
 </div>
+</div>
+
+<!-- POC Modal -->
+<div class="mo-overlay" id="poc-mo">
+  <div class="mbox">
+    <div class="m-hdr">
+      <h3>Generate POC document</h3>
+      <button class="m-close" onclick="closePOC()">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z"/></svg>
+      </button>
+    </div>
+    <div class="m-body">
+      <div class="g2">
+        <div class="fg"><span class="fl">Project name</span><input id="poc-name" placeholder="CabinSense AMS"></div>
+        <div class="fg"><span class="fl">Document type</span>
+          <select id="poc-type">
+            <option value="poc">Full POC document</option>
+            <option value="status">Project status report</option>
+            <option value="cost">Cost & budget summary</option>
+            <option value="vendor">Vendor & materials report</option>
+            <option value="tech">Technical architecture doc</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><span class="fl">Additional instructions for Claude</span><textarea id="poc-extra" style="min-height:60px" placeholder="What to highlight, what to ask Claude to fill in, assumptions to make..."></textarea></div>
+      <div id="poc-status" style="display:none" class="ai-stat"><div class="spin"></div><span id="poc-st-txt">Generating report…</span></div>
+      <div id="poc-preview" style="display:none">
+        <div class="fl" style="margin-bottom:6px">Preview</div>
+        <div class="rprev" id="poc-content"></div>
+      </div>
+    </div>
+    <div class="m-ftr">
+      <button class="btn" onclick="closePOC()">Cancel</button>
+      <button class="btn btn-gh" id="btn-push-poc" style="display:none" onclick="pushPOCtoGH()">Push to GitHub</button>
+      <button class="btn btn-p" id="btn-gen-poc" onclick="genPOC()">Generate</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-let entries=[], ghCfg=null, curF='all', curAnalysis=null;
+let entries=[],ghCfg=null,currentFilter='all',pocText='';
 const today=new Date().toISOString().split('T')[0];
 document.getElementById('f-date').value=today;
 
-// ── Storage ──────────────────────────────────────────────────────────────────
 async function load(){
   try{
     const[e,c,a]=await Promise.all([
-      window.storage.get('smj-entries').catch(()=>null),
-      window.storage.get('smj-config').catch(()=>null),
-      window.storage.get('smj-author').catch(()=>null),
+      window.storage.get('ghj2-entries').catch(()=>null),
+      window.storage.get('ghj2-config').catch(()=>null),
+      window.storage.get('ghj2-author').catch(()=>null),
     ]);
     entries=e?JSON.parse(e.value):[];
-    if(c){ghCfg=JSON.parse(c.value);updatePill(true);loadCfgF();}
+    if(c){ghCfg=JSON.parse(c.value);updatePill(true);loadCfgFields();}
     if(a)document.getElementById('f-author').value=a.value;
   }catch{entries=[];}
   render();stats();
 }
-async function savE(){try{await window.storage.set('smj-entries',JSON.stringify(entries));}catch{}}
+async function save(){try{await window.storage.set('ghj2-entries',JSON.stringify(entries));}catch{}}
 
-// ── Config ───────────────────────────────────────────────────────────────────
-function toggleCfg(){document.getElementById('cfg').classList.toggle('open');document.getElementById('cfg-st').textContent='';}
-function loadCfgF(){if(!ghCfg)return;document.getElementById('gh-repo').value=ghCfg.repo||'';document.getElementById('gh-br').value=ghCfg.branch||'main';document.getElementById('gh-base').value=ghCfg.base||'journal';}
+function toggleCfg(){document.getElementById('cfg-panel').classList.toggle('open');document.getElementById('cfg-status').textContent='';}
+function loadCfgFields(){if(!ghCfg)return;document.getElementById('gh-repo').value=ghCfg.repo||'';document.getElementById('gh-branch').value=ghCfg.branch||'main';document.getElementById('gh-base').value=ghCfg.base||'journal';}
+
 function saveGH(){
-  const tok=document.getElementById('gh-tok').value.trim(),repo=document.getElementById('gh-repo').value.trim();
-  if(!tok||!repo){toast('Token and Repo required','var(--yw)');return;}
-  ghCfg={token:tok,repo,branch:document.getElementById('gh-br').value.trim()||'main',base:document.getElementById('gh-base').value.trim()||'journal'};
-  window.storage.set('smj-config',JSON.stringify(ghCfg));
-  updatePill(true);toggleCfg();toast('GitHub connected ✓');
+  const token=document.getElementById('gh-token').value.trim();
+  const repo=document.getElementById('gh-repo').value.trim();
+  if(!token||!repo){showToast('Token and repo required','#D97706','#000');return;}
+  ghCfg={token,repo,branch:document.getElementById('gh-branch').value.trim()||'main',base:document.getElementById('gh-base').value.trim()||'journal'};
+  window.storage.set('ghj2-config',JSON.stringify(ghCfg));
+  updatePill(true);toggleCfg();showToast('GitHub connected','#28A745','#fff');
 }
+
 async function testGH(){
-  const tok=document.getElementById('gh-tok').value.trim(),repo=document.getElementById('gh-repo').value.trim();
-  const el=document.getElementById('cfg-st');el.textContent='Testing…';el.style.color='var(--txd)';
+  const token=document.getElementById('gh-token').value.trim();
+  const repo=document.getElementById('gh-repo').value.trim();
+  const el=document.getElementById('cfg-status');
+  el.textContent='Testing…';el.style.color='var(--color-text-secondary)';
   try{
-    const r=await fetch(`https://api.github.com/repos/${repo}`,{headers:ghH(tok)});
+    const r=await fetch(`https://api.github.com/repos/${repo}`,{headers:ghHeaders(token)});
     const d=await r.json();
-    if(r.ok){el.textContent=`✓ ${d.full_name}`;el.style.color='var(--gr)';}
-    else{el.textContent=`✗ ${d.message}`;el.style.color='var(--rd)';}
-  }catch{el.textContent='✗ Network error';el.style.color='var(--rd)';}
+    if(r.ok){el.textContent=`Found: ${d.full_name}`;el.style.color='#28A745';}
+    else{el.textContent=d.message;el.style.color='#DC2626';}
+  }catch{el.textContent='Network error';el.style.color='#DC2626';}
 }
+
 function updatePill(on,busy=false){
-  const p=document.getElementById('gh-pill');
-  p.className='pill '+(busy?'busy':on?'on':'off');
-  p.textContent=busy?'⬡ Syncing…':on?`⬡ ${ghCfg?.repo||'Connected'}`:'⬡ Connect GitHub';
+  const p=document.getElementById('ghpill');
+  p.className='gh-pill'+(busy?' busy':on?' on':'');
+  document.getElementById('gh-pill-txt').textContent=busy?'Syncing…':on?(ghCfg?.repo||'Connected'):'Connect GitHub';
 }
+
 function openRepo(){if(ghCfg)window.open(`https://github.com/${ghCfg.repo}`,'_blank');}
 
-// ── GitHub API ────────────────────────────────────────────────────────────────
-function ghH(tok){return{'Authorization':`token ${tok||ghCfg?.token}`,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'};}
+function ghHeaders(t){return{'Authorization':`token ${t||ghCfg?.token}`,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'};}
+
 async function ghGet(path){
-  const r=await fetch(`https://api.github.com/repos/${ghCfg.repo}/contents/${path}?ref=${ghCfg.branch}`,{headers:ghH()});
-  if(r.status===404)return null;if(!r.ok)throw new Error(`GH ${r.status}`);return r.json();
+  const r=await fetch(`https://api.github.com/repos/${ghCfg.repo}/contents/${path}?ref=${ghCfg.branch}`,{headers:ghHeaders()});
+  if(r.status===404)return null;if(!r.ok)throw new Error(`GH GET ${r.status}`);return r.json();
 }
+
 async function ghPut(path,content,sha,msg){
   const r=await fetch(`https://api.github.com/repos/${ghCfg.repo}/contents/${path}`,{
-    method:'PUT',headers:ghH(),
-    body:JSON.stringify({message:msg,content:btoa(unescape(encodeURIComponent(content))),branch:ghCfg.branch,...(sha?{sha}:{})}),
+    method:'PUT',headers:ghHeaders(),
+    body:JSON.stringify({message:msg,content:btoa(unescape(encodeURIComponent(content))),branch:ghCfg.branch,...(sha?{sha}:{})})
   });
   if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.message||`GH PUT ${r.status}`);}
   return r.json();
 }
-function slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');}
-function mpath(author,task){return`${ghCfg.base}/${slug(author)}/${slug(task)}.md`;}
 
-// ── AI ANALYSE ────────────────────────────────────────────────────────────────
-async function analyseNotes(){
-  const raw=document.getElementById('f-raw').value.trim();
-  const task=document.getElementById('f-task').value.trim();
-  const author=document.getElementById('f-author').value.trim();
-  if(!raw||!task||!author){toast('Name, Task and Notes required','var(--yw)');return;}
+function taskSlug(t){return t.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');}
+function memberPath(a,t){return `${ghCfg.base}/${a.toLowerCase().replace(/\s+/g,'-')}/${taskSlug(t)}.md`;}
 
-  document.getElementById('analysing').classList.add('show');
-  document.getElementById('analyse-row').style.display='none';
-  document.getElementById('ai-out').classList.remove('show');
+async function aiMerge(oldDoc,e){
+  const prompt=`You are a technical documentation expert for an aerospace/avionics project.
 
-  const prompt=`You are an expert aerospace/avionics project documentation analyst.
-
-A team member has provided raw session notes. Your job is to:
-1. Read the notes and determine the domain(s) involved
-2. Structure the information into the most relevant sections for that domain
-3. Generate precise tags
-4. Extract ALL data — no omissions, especially numbers, vendor names, part numbers, costs, specs
-
-Raw notes from ${author} on task "${task}":
-${raw}
-
-Respond ONLY with a JSON object in this exact structure:
-{
-  "title": "one-line session title",
-  "domain": "primary domain label e.g. Electrical/Battery, Airframe/Structures, Avionics/Software, Propulsion, Procurement, Regulatory/Compliance, Systems Integration, Ground Support, etc.",
-  "type": "work|ideation|decision|research|blocker",
-  "tags": ["array", "of", "precise", "tags", "max 10", "auto-derived from content"],
-  "sections": [
-    {
-      "heading": "section name relevant to this domain e.g. Battery Specifications, Vendor Quotes, Structural Analysis, DO-178C Compliance, etc.",
-      "content": "full detailed content — all numbers, names, specs, decisions — nothing summarized"
-    }
-  ],
-  "key_decisions": "decisions made this session with full rationale",
-  "next_steps": "concrete next steps with owner and deadline if mentioned",
-  "financial_summary": "any costs, quotes, budgets mentioned — leave blank if none"
-}
-
-Generate 3-8 sections appropriate for the domain. Section names should reflect the actual content, not generic labels.`;
-
-  try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]}),
-    });
-    const d=await r.json();
-    const txt=d.content?.find(b=>b.type==='text')?.text||'';
-    const clean=txt.replace(/```json|```/g,'').trim();
-    const parsed=JSON.parse(clean);
-    curAnalysis={...parsed,author,task,date:document.getElementById('f-date').value||today,rawNotes:raw,type:parsed.type||document.getElementById('f-type').value};
-    renderAnalysis(parsed);
-  }catch(err){
-    toast('Analysis failed — check console','var(--rd)');console.error(err);
-    document.getElementById('analyse-row').style.display='';
-  }
-  document.getElementById('analysing').classList.remove('show');
-}
-
-function renderAnalysis(p){
-  document.getElementById('out-domain').textContent=p.domain||'General';
-  // tags
-  const tc=document.getElementById('out-tags');
-  tc.innerHTML=(p.tags||[]).map(t=>`<span class="atag" onclick="this.classList.toggle('rm')">${t}</span>`).join('');
-  // sections
-  const sc=document.getElementById('out-sections');
-  const allSecs=[
-    ...( p.sections||[]),
-    ...(p.key_decisions?[{heading:'Key Decisions & Rationale',content:p.key_decisions}]:[]),
-    ...(p.next_steps?[{heading:'Next Steps',content:p.next_steps}]:[]),
-    ...(p.financial_summary?[{heading:'Financial Summary',content:p.financial_summary}]:[]),
-  ];
-  sc.innerHTML=allSecs.map((s,i)=>`
-    <div class="sec-block">
-      <div class="sec-hd" onclick="toggleSec(${i})">
-        <span class="sec-hd-t">${s.heading}</span>
-        <span class="sec-hd-icon" id="sec-ic-${i}">▾</span>
-      </div>
-      <div class="sec-body" id="sec-b-${i}">${s.content}</div>
-    </div>`).join('');
-  document.getElementById('ai-out').classList.add('show');
-  document.getElementById('analyse-row').style.display='';
-}
-
-function toggleSec(i){
-  const b=document.getElementById(`sec-b-${i}`),ic=document.getElementById(`sec-ic-${i}`);
-  b.classList.toggle('hide');ic.textContent=b.classList.contains('hide')?'▸':'▾';
-}
-function reanalyse(){document.getElementById('ai-out').classList.remove('show');curAnalysis=null;analyseNotes();}
-
-// ── Save & Push ───────────────────────────────────────────────────────────────
-async function saveAndPush(){
-  if(!curAnalysis){toast('Analyse first','var(--yw)');return;}
-  if(!ghCfg){toast('Connect GitHub first','var(--yw)');return;}
-
-  // get active tags (not removed)
-  const activeTags=[...document.querySelectorAll('#out-tags .atag:not(.rm)')].map(t=>t.textContent);
-
-  // get section content from DOM (user may have edited)
-  const sectionEls=document.querySelectorAll('#out-sections .sec-block');
-  const sections=[...sectionEls].map(el=>({
-    heading:el.querySelector('.sec-hd-t').textContent,
-    content:el.querySelector('.sec-body').textContent,
-  }));
-
-  const entry={
-    id:Date.now(),
-    date:curAnalysis.date,
-    author:curAnalysis.author,
-    task:curAnalysis.task,
-    type:curAnalysis.type,
-    title:curAnalysis.title,
-    domain:curAnalysis.domain,
-    tags:activeTags,
-    sections,
-    rawNotes:curAnalysis.rawNotes,
-    synced:false,ghUrl:null,
-  };
-
-  entries.unshift(entry);
-  updatePill(true,true);
-
-  try{
-    const path=mpath(entry.author,entry.task);
-    const existing=await ghGet(path);
-    let content,msg;
-
-    if(existing){
-      const oldDoc=decodeURIComponent(escape(atob(existing.content.replace(/\n/g,''))));
-      toast('Merging with existing doc…','var(--pu)');
-      content=await aiMerge(oldDoc,entry);
-      msg=`journal(${entry.author}): update ${entry.task} [${entry.date}]`;
-      await ghPut(path,content,existing.sha,msg);
-    }else{
-      content=buildMD(entry);
-      msg=`journal(${entry.author}): create ${entry.task} [${entry.date}]`;
-      await ghPut(path,content,null,msg);
-    }
-
-    entries[0].synced=true;
-    entries[0].ghUrl=`https://github.com/${ghCfg.repo}/blob/${ghCfg.branch}/${path}`;
-    showCS(path,entries[0].ghUrl);
-    toast('Pushed to GitHub ✓');
-    document.getElementById('ai-out').classList.remove('show');
-    curAnalysis=null;
-    clearForm();
-  }catch(err){toast('Push failed: '+err.message,'var(--rd)');console.error(err);}
-
-  updatePill(true,false);
-  try{await window.storage.set('smj-author',entry.author);}catch{}
-  await savE();render();stats();
-}
-
-async function aiMerge(oldDoc,entry){
-  const newContent=entry.sections.map(s=>`### ${s.heading}\n${s.content}`).join('\n\n');
-  const prompt=`You are an aerospace project documentation expert.
-
-Merge the EXISTING document with the NEW SESSION data for task "${entry.task}".
+Merge the EXISTING document and the NEW SESSION LOG into one comprehensive updated document for task "${e.task}".
 
 Rules:
-- Keep ALL existing data. Update only where new data explicitly supersedes (show both with dates where values changed)
-- Tally old vs new costs/quotes: show original and new side by side
-- Add new vendors alongside old ones — never delete previous contacts
-- Integrate new specs with old specs — show evolution
-- Keep full pin-to-pin detail — no summarizing
-- Output clean Markdown only
+1. Keep ALL existing data. Update only where new data supersedes (show old vs new with dates where values changed).
+2. Add new data that doesn't exist yet.
+3. Zero omissions — all numbers, vendor names, specs, costs must be preserved.
+4. Output clean Markdown with clear sections.
 
 EXISTING DOCUMENT:
 ${oldDoc}
 
-NEW SESSION (${entry.date} by ${entry.author} | Domain: ${entry.domain}):
-${newContent}
+NEW SESSION (${e.date} by ${e.author}):
+Title: ${e.title}
+Summary: ${e.summary}
+Budget: ${e.budget||'—'} | Cost this session: ${e.cost||'—'} | Total spent: ${e.spent||'—'}
+Cost breakdown: ${e.costdetail||'—'}
+Materials: ${e.materials||'—'}
+Vendors: ${e.vendors||'—'}
+Technical: ${e.tech||'—'}
+Decisions: ${e.decisions||'—'}
+Blockers: ${e.blockers||'—'}
+Next steps: ${e.next||'—'}
+Dependencies: ${e.deps||'—'}
+Tags: ${e.tags.join(', ')||'—'}
 
-Tags: ${entry.tags.join(', ')}
-
-Output ONLY the merged Markdown document.`;
-
+Output ONLY the merged Markdown. No preamble.`;
   const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
   const d=await r.json();
-  return d.content?.find(b=>b.type==='text')?.text||buildMD(entry);
+  return d.content?.find(b=>b.type==='text')?.text||'';
 }
 
-function buildMD(e){
-  let md=`# ${e.task}\n\n`;
-  md+=`**Domain:** ${e.domain} | **Author:** ${e.author} | **Last Updated:** ${e.date}\n`;
-  md+=`**Tags:** ${e.tags.join(', ')}\n\n---\n\n`;
-  md+=`## Session: ${e.date} — ${e.title}\n\n`;
-  e.sections.forEach(s=>{md+=`### ${s.heading}\n${s.content}\n\n`;});
-  return md;
+function buildDoc(e){
+  const tl={work:'Work Done',ideation:'Ideation',decision:'Decision',blocker:'Blocker',research:'Research'};
+  return `# ${e.task}\n\n**Author:** ${e.author} | **Updated:** ${e.date} | **Type:** ${tl[e.type]||e.type}\n**Tags:** ${e.tags.join(', ')||'—'}\n\n---\n\n## Session: ${e.date} — ${e.title}\n\n### Summary\n${e.summary||'—'}\n\n## Financial\n\n| Field | Value |\n|---|---|\n| Budget | ${e.budget||'—'} |\n| Cost (this session) | ${e.cost||'—'} |\n| Total spent | ${e.spent||'—'} |\n\n### Cost Breakdown\n${e.costdetail||'—'}\n\n## Materials & Components\n${e.materials||'—'}\n\n## Vendors & Dealers\n${e.vendors||'—'}\n\n## Technical\n${e.tech||'—'}\n\n## Decisions\n${e.decisions||'—'}\n\n## Blockers\n${e.blockers||'—'}\n\n## Next Steps\n${e.next||'—'}\n\n## Dependencies\n${e.deps||'—'}\n`;
 }
 
-// ── Push all pending ──────────────────────────────────────────────────────────
-async function pushAllPending(){
-  if(!ghCfg){toast('Connect GitHub first','var(--yw)');return;}
-  const pend=entries.filter(e=>!e.synced);
-  if(!pend.length){toast('All synced ✓');return;}
+async function pushEntry(entry){
+  if(!ghCfg)throw new Error('Not connected');
   updatePill(true,true);
-  for(const e of pend){
-    try{
-      const path=mpath(e.author,e.task);
-      const ex=await ghGet(path);
-      let content=buildMD(e),sha=null;
-      if(ex){const old=decodeURIComponent(escape(atob(ex.content.replace(/\n/g,''))));content=await aiMerge(old,e);sha=ex.sha;}
-      await ghPut(path,content,sha,`journal(${e.author}): ${e.task} [${e.date}]`);
-      e.synced=true;e.ghUrl=`https://github.com/${ghCfg.repo}/blob/${ghCfg.branch}/${path}`;
-    }catch(err){console.error(err);}
+  const path=memberPath(entry.author,entry.task);
+  const ex=await ghGet(path);
+  let content,msg;
+  if(ex){
+    const old=decodeURIComponent(escape(atob(ex.content.replace(/\n/g,''))));
+    showToast('AI merging with existing file…','#7C3AED','#fff');
+    const merged=await aiMerge(old,entry);
+    content=merged||buildDoc(entry);
+    msg=`journal(${entry.author}): update ${entry.task} [${entry.date}]`;
+    await ghPut(path,content,ex.sha,msg);
+  }else{
+    content=buildDoc(entry);
+    msg=`journal(${entry.author}): create ${entry.task} [${entry.date}]`;
+    await ghPut(path,content,null,msg);
   }
-  await savE();updatePill(true,false);render();stats();
-  toast(`${pend.length} entries pushed ✓`);
+  updatePill(true,false);
+  return `https://github.com/${ghCfg.repo}/blob/${ghCfg.branch}/${path}`;
 }
 
-// ── POC ───────────────────────────────────────────────────────────────────────
+async function addEntry(push){
+  const author=document.getElementById('f-author').value.trim();
+  const task=document.getElementById('f-task').value.trim();
+  const title=document.getElementById('f-title').value.trim();
+  const summary=document.getElementById('f-summary').value.trim();
+  if(!author||!task||!title||!summary){showToast('Name, task, title & summary required','#D97706','#000');return;}
+  try{await window.storage.set('ghj2-author',author);}catch{}
+  const entry={id:Date.now(),date:document.getElementById('f-date').value||today,author,task,type:document.getElementById('f-type').value,title,summary,budget:document.getElementById('f-budget').value.trim(),cost:document.getElementById('f-cost').value.trim(),spent:document.getElementById('f-spent').value.trim(),costdetail:document.getElementById('f-costdetail').value.trim(),materials:document.getElementById('f-materials').value.trim(),vendors:document.getElementById('f-vendors').value.trim(),tech:document.getElementById('f-tech').value.trim(),decisions:document.getElementById('f-decisions').value.trim(),blockers:document.getElementById('f-blockers').value.trim(),next:document.getElementById('f-next').value.trim(),deps:document.getElementById('f-deps').value.trim(),tags:document.getElementById('f-tags').value.split(',').map(t=>t.trim()).filter(Boolean),synced:false,ghUrl:null};
+  entries.unshift(entry);
+  if(push){
+    if(!ghCfg){showToast('Connect GitHub first','#D97706','#000');entries.shift();return;}
+    try{const url=await pushEntry(entry);entries[0].synced=true;entries[0].ghUrl=url;cstrip(entry,url);showToast('Pushed to GitHub','#28A745','#fff');}
+    catch(err){updatePill(true,false);showToast('Push failed: '+err.message,'#DC2626','#fff');}
+  }else{showToast('Saved locally','#0071E3','#fff');}
+  await save();clearForm();render();stats();
+}
+
+async function syncEntry(id){
+  if(!ghCfg){showToast('Connect GitHub first','#D97706','#000');return;}
+  const e=entries.find(x=>x.id===id);if(!e)return;
+  try{const url=await pushEntry(e);e.synced=true;e.ghUrl=url;await save();render();stats();cstrip(e,url);showToast('Synced to GitHub','#28A745','#fff');}
+  catch(err){updatePill(true,false);showToast('Sync failed: '+err.message,'#DC2626','#fff');}
+}
+
+async function pushAllPending(){
+  if(!ghCfg){showToast('Connect GitHub first','#D97706','#000');return;}
+  const pending=entries.filter(e=>!e.synced);
+  if(!pending.length){showToast('All entries synced','#28A745','#fff');return;}
+  for(const e of pending){try{const url=await pushEntry(e);e.synced=true;e.ghUrl=url;}catch{}}
+  await save();render();stats();showToast(`${pending.length} entries pushed`,'#28A745','#fff');
+}
+
+function openPOC(){if(!entries.length){showToast('Add entries first','#D97706','#000');return;}pocText='';document.getElementById('poc-preview').style.display='none';document.getElementById('poc-status').style.display='none';document.getElementById('btn-push-poc').style.display='none';document.getElementById('btn-gen-poc').style.display='';document.getElementById('poc-mo').classList.add('show');}
+function closePOC(){document.getElementById('poc-mo').classList.remove('show');}
+
 async function genPOC(){
-  if(!entries.length){toast('Add entries first','var(--yw)');return;}
-  const name=prompt('Project name:','Aerospace Project');if(!name)return;
-  const extra=prompt('Additional instructions for Claude (or leave blank):','');
-  toast('Generating POC…','var(--pu)');
-
-  const data=entries.map(e=>`
-TASK: ${e.task} | AUTHOR: ${e.author} | DATE: ${e.date} | DOMAIN: ${e.domain} | TYPE: ${e.type}
-TITLE: ${e.title}
-TAGS: ${e.tags.join(', ')}
-${e.sections.map(s=>`${s.heading.toUpperCase()}:\n${s.content}`).join('\n\n')}`).join('\n\n========\n\n');
-
-  const prompt2=`Write a comprehensive Proof of Concept document for the aerospace project "${name}".
-
-Use ALL data from the journal. Include every vendor name, cost figure, spec, part number, and decision. Do not summarize or omit anything.
-
-${extra?`Additional instructions: ${extra}\n\n`:''}Where information is missing or incomplete, mark clearly as: [ACTION REQUIRED: describe what is needed]
-
-JOURNAL DATA:
-${data}
-
-Format as professional Markdown with clear sections. Be exhaustive.`;
-
+  const name=document.getElementById('poc-name').value.trim()||'Aerospace Project';
+  const type=document.getElementById('poc-type').value;
+  const extra=document.getElementById('poc-extra').value.trim();
+  const typeMap={poc:'Full Proof of Concept document',status:'Project Status Report',cost:'Cost & Budget Summary',vendor:'Vendor & Materials Report',tech:'Technical Architecture Document'};
+  const data=entries.map(e=>`DATE: ${e.date} | AUTHOR: ${e.author} | TASK: ${e.task} | TYPE: ${e.type}\nTitle: ${e.title}\nSummary: ${e.summary}\nBudget: ${e.budget||'—'} | Cost: ${e.cost||'—'} | Spent: ${e.spent||'—'}\nCost detail: ${e.costdetail||'—'}\nMaterials: ${e.materials||'—'}\nVendors: ${e.vendors||'—'}\nTech: ${e.tech||'—'}\nDecisions: ${e.decisions||'—'}\nBlockers: ${e.blockers||'—'}\nNext: ${e.next||'—'}\nTags: ${e.tags.join(', ')}`).join('\n\n---\n\n');
+  const prompt=`Write a ${typeMap[type]} for project "${name}". Use ALL data from the journal — do not omit any financial figures, vendor details, specs or decisions. Mark missing sections [ACTION REQUIRED: describe what's needed].${extra?'\n\nAdditional instructions: '+extra:''}\n\nJOURNAL DATA:\n${data}\n\nOutput complete professional Markdown.`;
+  document.getElementById('poc-status').style.display='flex';document.getElementById('btn-gen-poc').style.display='none';document.getElementById('poc-preview').style.display='none';
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt2}]})});
-    const d=await r.json();
-    const txt=d.content?.find(b=>b.type==='text')?.text||'';
-    if(!txt)throw new Error('Empty');
-
-    if(ghCfg&&confirm('Push POC to GitHub?')){
-      const path=`${ghCfg.base}/_reports/${today}-poc-${slug(name)}.md`;
-      const ex=await ghGet(path);
-      await ghPut(path,txt,ex?.sha||null,`report: POC ${name} [${today}]`);
-      const url=`https://github.com/${ghCfg.repo}/blob/${ghCfg.branch}/${path}`;
-      showCS(path,url);toast('POC pushed to GitHub ✓');
-    }else{
-      const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([txt],{type:'text/markdown'})),download:`POC-${slug(name)}-${today}.md`});a.click();
-      toast('POC downloaded ✓');
-    }
-  }catch(err){toast('POC failed','var(--rd)');console.error(err);}
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const d=await r.json();pocText=d.content?.find(b=>b.type==='text')?.text||'';
+    if(!pocText)throw new Error('Empty');
+    document.getElementById('poc-status').style.display='none';document.getElementById('poc-content').textContent=pocText;document.getElementById('poc-preview').style.display='block';document.getElementById('btn-push-poc').style.display='';
+  }catch{document.getElementById('poc-status').style.display='none';document.getElementById('btn-gen-poc').style.display='';showToast('Generation failed','#DC2626','#fff');}
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
-function setF(f,btn){curF=f;document.querySelectorAll('.sb-btn').forEach(b=>b.classList.remove('act'));if(btn)btn.classList.add('act');render();}
+async function pushPOCtoGH(){
+  if(!ghCfg||!pocText)return;
+  const name=(document.getElementById('poc-name').value.trim()||'project').toLowerCase().replace(/\s+/g,'-');
+  const type=document.getElementById('poc-type').value;
+  const path=`${ghCfg.base}/_reports/${today}-${type}-${name}.md`;
+  try{const ex=await ghGet(path);await ghPut(path,pocText,ex?.sha||null,`report: ${type} — ${today}`);const url=`https://github.com/${ghCfg.repo}/blob/${ghCfg.branch}/${path}`;showToast('Report pushed to GitHub','#28A745','#fff');closePOC();document.getElementById('cstrip').classList.add('show');document.getElementById('cstrip-txt').innerHTML=`Report committed — <a href="${url}" target="_blank">View on GitHub</a>`;}
+  catch(err){showToast('Push failed: '+err.message,'#DC2626','#fff');}
+}
+
+function parsePaste(){
+  const txt=document.getElementById('f-paste').value.trim();if(!txt)return;
+  const fmap={'title':'f-title','task':'f-task','summary':'f-summary','budget':'f-budget','cost incurred':'f-cost','cost this session':'f-cost','total spent':'f-spent','cost breakdown':'f-costdetail','quotes':'f-costdetail','materials':'f-materials','components':'f-materials','vendors':'f-vendors','dealers':'f-vendors','technical':'f-tech','specifications':'f-tech','decisions':'f-decisions','decision':'f-decisions','blockers':'f-blockers','open questions':'f-blockers','next steps':'f-next','dependencies':'f-deps','tags':'f-tags'};
+  const lines=txt.split('\n');let cur='',acc=[];
+  const commit=()=>{if(cur&&acc.length){const id=fmap[cur];if(id){const el=document.getElementById(id);if(el)el.value=acc.join('\n').trim();}}cur='';acc=[];};
+  for(const line of lines){const l=line.trim();if(!l)continue;const c=l.indexOf(':');if(c>0){const k=l.slice(0,c).toLowerCase();if(fmap[k]!==undefined){commit();cur=k;const v=l.slice(c+1).trim();if(v)acc.push(v);continue;}}if(cur)acc.push(l);}
+  commit();document.getElementById('f-paste').value='';showToast('Parsed — review all fields','#0071E3','#fff');
+}
+
+function clearForm(){['f-title','f-task','f-summary','f-budget','f-cost','f-spent','f-costdetail','f-materials','f-vendors','f-tech','f-decisions','f-blockers','f-next','f-deps','f-tags','f-paste'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-date').value=today;document.getElementById('f-type').value='work';}
+
+function setFilter(f,btn){currentFilter=f;document.querySelectorAll('.f-btn').forEach(b=>b.classList.remove('act'));if(btn)btn.classList.add('act');render();}
 
 function render(){
   const s=document.getElementById('srch').value.toLowerCase();
-  const tl={work:'Work Done',ideation:'Ideation',decision:'Decision',blocker:'Blocker',research:'Research'};
-  let f=entries.filter(e=>{
-    if(curF!=='all'&&e.type!==curF)return false;
-    if(s){const b=[e.title,e.task,e.author,e.domain,...(e.tags||[]),...(e.sections||[]).map(x=>x.content)].join(' ').toLowerCase();if(!b.includes(s))return false;}
-    return true;
-  });
+  const tl={work:'Work done',ideation:'Ideation',decision:'Decision',blocker:'Blocker',research:'Research'};
+  let f=entries.filter(e=>{if(currentFilter!=='all'&&e.type!==currentFilter)return false;if(s){const b=[e.title,e.task,e.summary,e.author,e.budget,e.cost,e.materials,e.vendors,e.decisions,...e.tags].join(' ').toLowerCase();if(!b.includes(s))return false;}return true;});
   document.getElementById('ecount').textContent=`${f.length} entr${f.length===1?'y':'ies'}`;
   const c=document.getElementById('elist');
-  if(!f.length){c.innerHTML=`<div class="empty">◈<br>No entries yet. Fill in the form above and click Analyse.</div>`;return;}
-  c.innerHTML=f.map(e=>`
-    <div class="entry">
-      <div class="ebar bar-${e.type}"></div>
-      <div class="ehdr">
-        <div>
-          <div class="emeta">
-            <span class="edate">${e.date}</span>
-            <span class="ebadge type-${e.type}">${tl[e.type]||e.type}</span>
-            ${e.author?`<span class="eauth">${e.author}</span>`:''}
-            ${e.domain?`<span class="edomain">${e.domain}</span>`:''}
-            <span class="esync ${e.synced?'ok':'no'}">${e.synced?`⬡ GH${e.ghUrl?` <a href="${e.ghUrl}" target="_blank" style="color:var(--gr);text-decoration:none;font-size:9px">↗</a>`:''}`:'○ pending'}</span>
-          </div>
-          <div class="etitle">${e.title||e.task}</div>
-        </div>
-        <div class="eacts">
-          ${!e.synced?`<button class="ibtn sync" onclick="syncOne(${e.id})">↑ GH</button>`:''}
-          <button class="ibtn" onclick="delE(${e.id})">✕</button>
-        </div>
-      </div>
-      <div class="ebody">
-        ${(e.sections||[]).slice(0,3).map(s=>`<div class="esl">${s.heading}</div><div class="etxt">${s.content.slice(0,200)}${s.content.length>200?'…':''}</div>`).join('')}
-        ${e.tags?.length?`<div class="etag-row">${e.tags.map(t=>`<span class="etag">${t}</span>`).join('')}</div>`:''}
-      </div>
-    </div>`).join('');
+  if(!f.length){c.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 16 16" fill="currentColor" width="20" height="20"><path d="M11.5 6.5a.75.75 0 0 1 .75.75v3.69l1.22-1.22a.75.75 0 0 1 1.06 1.06l-2.5 2.5a.75.75 0 0 1-1.06 0l-2.5-2.5a.75.75 0 1 1 1.06-1.06l1.22 1.22V7.25a.75.75 0 0 1 .75-.75zm-5.5 0a.75.75 0 0 1 .75.75v3.69l1.22-1.22a.75.75 0 0 1 1.06 1.06l-2.5 2.5a.75.75 0 0 1-1.06 0l-2.5-2.5a.75.75 0 1 1 1.06-1.06L6 10.69V7.25A.75.75 0 0 1 6 6.5z"/></svg></div><h3>No entries yet</h3><p>Fill in the session form above to log your first entry.</p></div>`;return;}
+  c.innerHTML=f.map(e=>{
+    const tc=e.type==='work'?'work':e.type==='ideation'?'ideation':e.type==='decision'?'decision':e.type==='blocker'?'blocker':'research';
+    return `<div class="entry"><div class="e-bar ${tc}"></div><div class="ehdr"><div><div class="emeta"><span class="badge-date">${e.date}</span><span class="badge badge-type ${tc}">${tl[e.type]||e.type}</span>${e.author?`<span class="badge badge-author">${e.author}</span>`:''} ${e.task?`<span class="badge badge-task">${e.task}</span>`:''} ${e.synced?`<span class="sync-ok">Synced${e.ghUrl?` <a href="${e.ghUrl}" target="_blank">↗</a>`:''}</span>`:`<span class="sync-no">Local only</span>`}</div><div class="etitle">${e.title}</div></div><div class="e-acts">${!e.synced?`<button class="ico-btn gh-btn" onclick="syncEntry(${e.id})">Push to GH</button>`:''}<button class="ico-btn del" onclick="delEntry(${e.id})">Delete</button></div></div><div class="ebody">${e.summary?`<div class="e-field"><div class="e-lbl">Summary</div><div class="e-val">${e.summary}</div></div>`:''}${e.budget||e.cost||e.spent?`<div class="e-grid">${e.budget?`<div class="e-metric"><div class="e-lbl">Budget</div><div class="e-val">${e.budget}</div></div>`:''}${e.cost?`<div class="e-metric"><div class="e-lbl">Cost (session)</div><div class="e-val">${e.cost}</div></div>`:''}${e.spent?`<div class="e-metric"><div class="e-lbl">Total spent</div><div class="e-val">${e.spent}</div></div>`:''}</div>`:''}${e.costdetail?`<div class="e-field"><div class="e-lbl">Cost breakdown</div><div class="e-val">${e.costdetail}</div></div>`:''}${e.vendors?`<div class="e-field"><div class="e-lbl">Vendors & dealers</div><div class="e-val">${e.vendors}</div></div>`:''}${e.decisions?`<div class="e-field"><div class="e-lbl">Decisions</div><div class="e-val">${e.decisions}</div></div>`:''}${e.next?`<div class="e-field"><div class="e-lbl">Next steps</div><div class="e-val">${e.next}</div></div>`:''}${e.tags.length?`<div class="tag-row">${e.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>`:''}</div></div>`;
+  }).join('');
 }
 
-function stats(){
-  document.getElementById('st-total').textContent=entries.length;
-  document.getElementById('st-synced').textContent=entries.filter(e=>e.synced).length;
-  document.getElementById('st-pend').textContent=entries.filter(e=>!e.synced).length;
-  document.getElementById('st-mem').textContent=new Set(entries.map(e=>e.author)).size;
-  document.getElementById('st-tasks').textContent=new Set(entries.map(e=>e.task)).size;
-}
-
-async function syncOne(id){
-  if(!ghCfg){toast('Connect GitHub first','var(--yw)');return;}
-  const e=entries.find(x=>x.id===id);if(!e)return;
-  updatePill(true,true);
-  try{
-    const path=mpath(e.author,e.task);const ex=await ghGet(path);
-    let content=buildMD(e),sha=null;
-    if(ex){const old=decodeURIComponent(escape(atob(ex.content.replace(/\n/g,''))));content=await aiMerge(old,e);sha=ex.sha;}
-    await ghPut(path,content,sha,`journal(${e.author}): ${e.task} [${e.date}]`);
-    e.synced=true;e.ghUrl=`https://github.com/${ghCfg.repo}/blob/${ghCfg.branch}/${path}`;
-    await savE();render();stats();showCS(path,e.ghUrl);toast('Synced ✓');
-  }catch(err){toast('Sync failed: '+err.message,'var(--rd)');}
-  updatePill(true,false);
-}
-
-function delE(id){if(!confirm('Delete?'))return;entries=entries.filter(e=>e.id!==id);savE();render();stats();toast('Deleted','var(--rd)');}
-function clearAll(){entries=[];savE();render();stats();toast('Cleared','var(--rd)');}
-function clearForm(){['f-raw','f-task'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-date').value=today;document.getElementById('f-type').value='work';document.getElementById('ai-out').classList.remove('show');curAnalysis=null;}
-function showCS(path,url){const el=document.getElementById('cs');el.innerHTML=`▸ Pushed: <strong>${path}</strong> · <a href="${url}" target="_blank">View on GitHub →</a>`;el.classList.add('show');}
-function toast(msg,color='var(--gr)'){const t=document.getElementById('toast');t.textContent=msg;t.style.background=color;t.style.color=color==='var(--yw)'||color==='var(--accent)'?'#000':'#fff';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
+function stats(){document.getElementById('st-total').textContent=entries.length;document.getElementById('st-synced').textContent=entries.filter(e=>e.synced).length;document.getElementById('st-pending').textContent=entries.filter(e=>!e.synced).length;['work','decision','research','ideation','blocker'].forEach(t=>document.getElementById('st-'+t).textContent=entries.filter(e=>e.type===t).length);}
+function delEntry(id){if(!confirm('Delete this entry?'))return;entries=entries.filter(e=>e.id!==id);save();render();stats();showToast('Entry deleted','#DC2626','#fff');}
+function clearAll(){entries=[];save();render();stats();showToast('Cleared','#DC2626','#fff');}
+function cstrip(e,url){const el=document.getElementById('cstrip');el.classList.add('show');document.getElementById('cstrip-txt').innerHTML=`Committed <strong>${e.author}/${taskSlug(e.task)}.md</strong> — <a href="${url}" target="_blank">View on GitHub</a>`;}
+function showToast(msg,bg='#28A745',color='#fff'){const t=document.getElementById('toast');t.textContent=msg;t.style.background=bg;t.style.color=color;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 
 load();
 </script>
-</body>
-</html>
