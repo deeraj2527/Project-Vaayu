@@ -1,5 +1,5 @@
 <h2 class="sr-only">Aerospace Project Journal — GitHub sync enabled, premium UI, smart merge / replace / version</h2>
-<script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -123,35 +123,54 @@ body{
 .gh-pill{
   display:inline-flex;align-items:center;gap:8px;
   padding:7px 14px;border-radius:100px;
-  border:1px solid var(--line-strong);
-  font-size:12.5px;font-weight:500;
-  cursor:pointer;background:#FFFFFF;color:var(--text-2);
+  border:1px solid rgba(239,68,68,.4);
+  font-size:12.5px;font-weight:600;
+  cursor:pointer;
+  background:linear-gradient(180deg,#FEF2F2 0%,#FEE2E2 100%);
+  color:#B91C1C;
   transition:all var(--dur) var(--ease);
-  box-shadow:var(--glow-soft);
+  box-shadow:0 1px 2px rgba(239,68,68,.15);
   user-select:none;
 }
-.gh-pill:hover{border-color:var(--text-2);color:var(--text);transform:translateY(-1px);box-shadow:0 2px 8px rgba(10,10,11,.08)}
+.gh-pill:hover{
+  border-color:rgba(239,68,68,.6);
+  color:#991B1B;
+  transform:translateY(-1px);
+  box-shadow:0 3px 10px rgba(239,68,68,.25);
+}
 .gh-pill:active{transform:translateY(0)}
 .gh-pill .dot{
   width:7px;height:7px;border-radius:50%;
-  background:var(--text-3);flex-shrink:0;
+  background:#EF4444;flex-shrink:0;
+  box-shadow:0 0 0 2px rgba(239,68,68,.18);
   transition:background var(--dur) var(--ease),box-shadow var(--dur) var(--ease);
 }
 .gh-pill.on{
-  color:var(--text);
-  border-color:rgba(16,185,129,.45);
-  background:linear-gradient(180deg,#FFFFFF 0%,#F0FDF4 100%);
+  color:#065F46;
+  border-color:rgba(16,185,129,.5);
+  background:linear-gradient(180deg,#ECFDF5 0%,#D1FAE5 100%);
+  box-shadow:0 1px 2px rgba(16,185,129,.2),0 0 0 1px rgba(16,185,129,.1);
+}
+.gh-pill.on:hover{
+  border-color:rgba(16,185,129,.7);
+  color:#064E3B;
+  box-shadow:0 3px 12px rgba(16,185,129,.3);
 }
 .gh-pill.on .dot{
   background:#10B981;
-  box-shadow:0 0 0 3px rgba(16,185,129,.18),0 0 8px rgba(16,185,129,.4);
+  box-shadow:0 0 0 3px rgba(16,185,129,.25),0 0 8px rgba(16,185,129,.5);
   animation:livepulse 2.4s ease-in-out infinite;
 }
-.gh-pill.busy .dot{background:var(--accent);animation:pulse 1s infinite}
+.gh-pill.busy{
+  color:#1E40AF;
+  border-color:rgba(59,130,246,.5);
+  background:linear-gradient(180deg,#EFF6FF 0%,#DBEAFE 100%);
+}
+.gh-pill.busy .dot{background:var(--accent);animation:pulse 1s infinite;box-shadow:0 0 0 3px rgba(59,130,246,.2)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 @keyframes livepulse{
-  0%,100%{box-shadow:0 0 0 3px rgba(16,185,129,.18),0 0 8px rgba(16,185,129,.4)}
-  50%{box-shadow:0 0 0 5px rgba(16,185,129,.06),0 0 12px rgba(16,185,129,.5)}
+  0%,100%{box-shadow:0 0 0 3px rgba(16,185,129,.25),0 0 8px rgba(16,185,129,.5)}
+  50%{box-shadow:0 0 0 5px rgba(16,185,129,.08),0 0 12px rgba(16,185,129,.6)}
 }
 
 /* ────────── BODY LAYOUT ────────── */
@@ -796,6 +815,7 @@ input[type=date]{color-scheme:light}
 
       <div class="btn-row">
         <button class="btn" onclick="parsePaste()">Parse paste</button>
+        <button class="btn" onclick="enhanceWithAI()" title="Tries Claude API; falls back to deterministic Parse if unreachable">✨ AI enhance</button>
         <button class="btn" onclick="clearForm()">Clear form</button>
         <button class="btn btn-p" onclick="addEntry(false)">Save locally</button>
         <button class="btn btn-gh" onclick="addEntry(true)">Push to GitHub</button>
@@ -1034,33 +1054,77 @@ function classifyDiff(oldText,newText){
   return{kind,add,mod:Math.min(removed,add),keep};
 }
 
-/* ────────── CLAUDE: STRUCTURING ONLY ──────────
-   Strict role: structure raw paste into JSON the parser already understands.
-   Used only when normal field-key parsing fails AND user explicitly asks.
-   No styling, no DOCX, no UI generation — JSON only. */
+/* ────────── CLAUDE: STRUCTURING ──────────
+   PRIMARY parser for messy real-world paste. Handles markdown headings,
+   bullets, tables, mixed prose. Returns JSON only. */
 async function aiStructure(rawText){
-  const prompt=`Structure this raw aerospace project session log into JSON. Output ONLY valid JSON, no preamble, no markdown fence.
+  const prompt=`You are a strict JSON extractor for an aerospace/avionics project journal.
 
-Schema (use empty string for missing fields):
+Extract structured data from the messy session log below and return ONLY valid JSON. No markdown fence, no preamble, no commentary.
+
+The input may contain: markdown headings (## Section), bullet lists (- item), tables (| col | col |), inline labels (Cost: ₹500), or free prose. Extract from ALL of these.
+
+REQUIRED SCHEMA (use empty string "" for missing fields, never omit a key):
 {
-  "title":"","task":"","summary":"",
-  "budget":"","cost":"","spent":"","costdetail":"",
-  "materials":"","vendors":"","tech":"",
-  "decisions":"","blockers":"","next":"","deps":"",
-  "tags":["..."]
+  "title": "short session title (1 line)",
+  "task": "task or module name",
+  "type": "one of: work | ideation | decision | research | blocker",
+  "summary": "full prose summary — preserve everything substantive",
+  "budget": "total project budget if mentioned (e.g. '₹2,50,000')",
+  "cost": "cost for THIS session only (e.g. '₹18,500')",
+  "spent": "cumulative total spent to date",
+  "costdetail": "itemised cost breakdown — preserve tables AS markdown tables, lists as bullets. Include vendor names, items, quantities, unit prices.",
+  "materials": "materials/components — name, spec, qty, status",
+  "vendors": "vendor/dealer details — name, location, contact, lead time, MOQ, price",
+  "tech": "technical specs, standards (DO-178C/ARINC/etc), architecture, interfaces",
+  "decisions": "decisions made WITH rationale, alternatives, trade-offs",
+  "blockers": "open questions, unresolved items, dependencies blocking progress",
+  "next": "next steps with owner and deadline if available",
+  "deps": "what this work is waiting on",
+  "tags": ["array","of","short","tags"]
 }
 
+EXTRACTION RULES:
+1. Be aggressive — pull data from tables, bullets, prose alike. Do not drop information.
+2. For tables, preserve them as markdown tables in the appropriate field (usually costdetail, materials, or vendors).
+3. For ANY mention of money (₹, $, €, INR, USD, "cost", "price", "quote", "budget", "spent"), populate the right financial field.
+4. If something doesn't clearly belong elsewhere, put it in summary — never lose data.
+5. Infer "type" from content: building/coding=work, exploring options=ideation, choosing=decision, learning=research, stuck=blocker.
+
 RAW INPUT:
+"""
 ${rawText}
+"""
 
 JSON:`;
   const r=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
   });
+  if(!r.ok)throw new Error(`API ${r.status}`);
   const d=await r.json();
-  const txt=(d.content?.find(b=>b.type==='text')?.text||'').replace(/```json|```/g,'').trim();
-  return JSON.parse(txt);
+  let txt=(d.content?.find(b=>b.type==='text')?.text||'').trim();
+  // Strip any code fence the model might have added despite instructions
+  txt=txt.replace(/^```(?:json)?\s*/i,'').replace(/\s*```\s*$/,'').trim();
+  // If model added preamble, find the first { and last } to extract JSON object
+  const first=txt.indexOf('{'),last=txt.lastIndexOf('}');
+  if(first>-1&&last>first)txt=txt.slice(first,last+1);
+  try{return JSON.parse(txt);}
+  catch(e){
+    // Likely token-truncated. Attempt repair: close any unterminated string + braces.
+    let repaired=txt;
+    // Count unmatched quotes — if odd, close the last string
+    const quoteCount=(repaired.match(/(?<!\\)"/g)||[]).length;
+    if(quoteCount%2!==0)repaired+='"';
+    // Close trailing incomplete value
+    if(/[:,]\s*$/.test(repaired))repaired+='""';
+    // Balance braces and brackets
+    const openB=(repaired.match(/{/g)||[]).length-(repaired.match(/}/g)||[]).length;
+    const openA=(repaired.match(/\[/g)||[]).length-(repaired.match(/\]/g)||[]).length;
+    repaired+=']'.repeat(Math.max(0,openA))+'}'.repeat(Math.max(0,openB));
+    try{return JSON.parse(repaired);}
+    catch(e2){throw new Error('Claude returned non-JSON (paste may be too long — try splitting it)');}
+  }
 }
 
 /* ────────── CLAUDE: MERGE ──────────
@@ -1197,9 +1261,18 @@ async function resolveConflict(action){
     if(action==='merge'){
       showToast('AI merging with existing file…','#8B5CF6','#fff');
       let merged='';
-      try{merged=await aiMerge(ctx.oldRaw,ctx.entry);}catch{merged='';}
-      const content=merged||ctx.newRaw; // graceful fallback if API fails
-      const msg=`journal(${ctx.entry.author}): merge update ${ctx.entry.task} [${ctx.entry.date}]`;
+      let aiFailed=false;
+      try{merged=await aiMerge(ctx.oldRaw,ctx.entry);}catch{aiFailed=true;}
+      // Graceful fallback: APPEND new session to existing doc (don't lose old data)
+      let content;
+      if(merged){
+        content=merged;
+      }else{
+        const sessionBlock=`\n\n---\n\n## Session: ${ctx.entry.date} — ${ctx.entry.title}\n\n### Summary\n${ctx.entry.summary||'—'}\n\n### Financial\n- Budget: ${ctx.entry.budget||'—'}\n- Cost (this session): ${ctx.entry.cost||'—'}\n- Total spent: ${ctx.entry.spent||'—'}\n${ctx.entry.costdetail?'\n### Cost Breakdown\n'+ctx.entry.costdetail+'\n':''}${ctx.entry.materials?'\n### Materials\n'+ctx.entry.materials+'\n':''}${ctx.entry.vendors?'\n### Vendors\n'+ctx.entry.vendors+'\n':''}${ctx.entry.tech?'\n### Technical\n'+ctx.entry.tech+'\n':''}${ctx.entry.decisions?'\n### Decisions\n'+ctx.entry.decisions+'\n':''}${ctx.entry.blockers?'\n### Blockers\n'+ctx.entry.blockers+'\n':''}${ctx.entry.next?'\n### Next steps\n'+ctx.entry.next+'\n':''}`;
+        content=ctx.oldRaw.trimEnd()+sessionBlock;
+        if(aiFailed)showToast('AI unreachable — appended new session safely','#D97706','#fff');
+      }
+      const msg=`journal(${ctx.entry.author}): ${aiFailed?'append':'merge'} update ${ctx.entry.task} [${ctx.entry.date}]`;
       await ghPut(ctx.path,content,ctx.existing.sha,msg);
       url=`https://github.com/${ghCfg.repo}/blob/${ghCfg.branch}/${ctx.path}`;
     }else if(action==='replace'){
@@ -1293,6 +1366,7 @@ async function pushAllPending(){
    Uses docx@8 (already loaded). Markdown → simple paragraph mapping.
    ════════════════════════════════════════════════════════════ */
 function mdToDocx(md,titleStr){
+  if(!window.docx||!window.docx.Packer)throw new Error('DOCX library not loaded — check network');
   const{Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,WidthType,BorderStyle}=window.docx;
   const lines=md.split('\n');
   const children=[];
@@ -1363,22 +1437,45 @@ function mdToDocx(md,titleStr){
 }
 
 async function downloadDocx(md,filename,titleStr){
+  if(!window.docx||!window.docx.Packer){
+    // Last-ditch attempt: lazy-load the UMD bundle from a fallback CDN
+    await new Promise((res,rej)=>{
+      const s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js';
+      s.onload=res;s.onerror=()=>rej(new Error('Could not load DOCX library'));
+      document.head.appendChild(s);
+    });
+  }
   const{Packer}=window.docx;
   const doc=mdToDocx(md,titleStr);
   const blob=await Packer.toBlob(doc);
+  const url=URL.createObjectURL(blob);
+
+  // Method 1: Standard anchor download (works in most browsers including sandboxed iframes
+  // when sandbox includes allow-downloads, which Claude.ai artifacts do).
   const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
+  a.href=url;
   a.download=filename;
-  document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(a.href),500);
+  a.rel='noopener';
+  // Some sandboxed contexts need target=_blank to allow downloads
+  a.target='_blank';
+  document.body.appendChild(a);
+  a.click();
+
+  // Cleanup, but keep URL alive briefly so the download has time to start
+  setTimeout(()=>{a.remove();URL.revokeObjectURL(url);},2000);
+
+  return filename;
 }
 
 async function downloadEntryDocx(id){
   const e=entries.find(x=>x.id===id);if(!e)return;
   const md=buildDoc(e);
   const fn=`${e.author.toLowerCase().replace(/\s+/g,'-')}-${taskSlug(e.task)}-${e.date}.docx`;
-  try{await downloadDocx(md,fn,`${e.task} — ${e.title}`);showToast('Downloaded .docx','#10B981','#fff');}
-  catch(err){showToast('DOCX failed: '+err.message,'#EF4444','#fff');}
+  try{
+    await downloadDocx(md,fn,`${e.task} — ${e.title}`);
+    showToast(`✓ ${fn} → Downloads folder`,'#10B981','#fff');
+  }catch(err){showToast('DOCX failed: '+err.message,'#EF4444','#fff');}
 }
 
 async function downloadPOCDocx(){
@@ -1386,8 +1483,10 @@ async function downloadPOCDocx(){
   const name=document.getElementById('poc-name').value.trim()||'project';
   const type=document.getElementById('poc-type').value;
   const fn=`${today}-${type}-${name.toLowerCase().replace(/\s+/g,'-')}.docx`;
-  try{await downloadDocx(pocText,fn,name);showToast('Downloaded .docx','#10B981','#fff');}
-  catch(err){showToast('DOCX failed: '+err.message,'#EF4444','#fff');}
+  try{
+    await downloadDocx(pocText,fn,name);
+    showToast(`✓ ${fn} → Downloads folder`,'#10B981','#fff');
+  }catch(err){showToast('DOCX failed: '+err.message,'#EF4444','#fff');}
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -1433,6 +1532,7 @@ Output complete professional Markdown.`;
   document.getElementById('poc-preview').style.display='none';
   try{
     const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    if(!r.ok)throw new Error(`API ${r.status}`);
     const d=await r.json();pocText=d.content?.find(b=>b.type==='text')?.text||'';
     if(!pocText)throw new Error('Empty');
     document.getElementById('poc-status').style.display='none';
@@ -1440,11 +1540,110 @@ Output complete professional Markdown.`;
     document.getElementById('poc-preview').style.display='block';
     document.getElementById('btn-push-poc').style.display=ghCfg?'':'none';
     document.getElementById('btn-docx-poc').style.display='';
-  }catch{
+  }catch(err){
+    // Fallback: build a structured report deterministically from journal data
+    pocText=buildDeterministicReport(name,type,extra);
     document.getElementById('poc-status').style.display='none';
-    document.getElementById('btn-gen-poc').style.display='';
-    showToast('Generation failed','#EF4444','#fff');
+    document.getElementById('poc-content').textContent=pocText;
+    document.getElementById('poc-preview').style.display='block';
+    document.getElementById('btn-push-poc').style.display=ghCfg?'':'none';
+    document.getElementById('btn-docx-poc').style.display='';
+    showToast('AI unreachable — built deterministic report','#D97706','#fff');
   }
+}
+
+// Deterministic POC report builder — used when Claude API is unreachable.
+// Aggregates ALL journal data into a structured Markdown document.
+function buildDeterministicReport(name,type,extra){
+  const typeMap={poc:'Proof of Concept',status:'Status Report',cost:'Cost & Budget Summary',vendor:'Vendor & Materials Report',tech:'Technical Architecture'};
+  const today=new Date().toISOString().split('T')[0];
+  let md=`# ${name} — ${typeMap[type]||type}\n\n`;
+  md+=`**Generated:** ${today}  \n**Total entries:** ${entries.length}  \n`;
+  if(extra)md+=`**Notes:** ${extra}  \n`;
+  md+=`\n---\n\n`;
+
+  // Executive summary
+  const authors=[...new Set(entries.map(e=>e.author))].filter(Boolean);
+  const tasks=[...new Set(entries.map(e=>e.task))].filter(Boolean);
+  md+=`## Executive Summary\n\n`;
+  md+=`- **Contributors:** ${authors.join(', ')||'—'}\n`;
+  md+=`- **Tasks covered:** ${tasks.join(', ')||'—'}\n`;
+  md+=`- **Date range:** ${entries.length?entries[entries.length-1].date+' → '+entries[0].date:'—'}\n\n`;
+
+  // Financial summary
+  if(type==='poc'||type==='cost'||type==='status'){
+    md+=`## Financial Summary\n\n`;
+    md+=`| Date | Author | Task | Budget | Cost | Spent |\n|---|---|---|---|---|---|\n`;
+    for(const e of entries){
+      md+=`| ${e.date} | ${e.author} | ${e.task} | ${e.budget||'—'} | ${e.cost||'—'} | ${e.spent||'—'} |\n`;
+    }
+    md+='\n';
+    const detailEntries=entries.filter(e=>e.costdetail);
+    if(detailEntries.length){
+      md+=`### Cost Breakdown Details\n\n`;
+      for(const e of detailEntries){
+        md+=`**${e.task} — ${e.date}**\n\n${e.costdetail}\n\n`;
+      }
+    }
+  }
+
+  // Vendors & materials
+  if(type==='poc'||type==='vendor'){
+    const vendorEntries=entries.filter(e=>e.vendors||e.materials);
+    if(vendorEntries.length){
+      md+=`## Vendors & Materials\n\n`;
+      for(const e of vendorEntries){
+        md+=`### ${e.task} (${e.date})\n\n`;
+        if(e.vendors)md+=`**Vendors:**\n${e.vendors}\n\n`;
+        if(e.materials)md+=`**Materials:**\n${e.materials}\n\n`;
+      }
+    }
+  }
+
+  // Technical
+  if(type==='poc'||type==='tech'){
+    const techEntries=entries.filter(e=>e.tech);
+    if(techEntries.length){
+      md+=`## Technical Specifications\n\n`;
+      for(const e of techEntries){
+        md+=`### ${e.task} (${e.date})\n\n${e.tech}\n\n`;
+      }
+    }
+  }
+
+  // Decisions
+  if(type==='poc'||type==='status'){
+    const decEntries=entries.filter(e=>e.decisions);
+    if(decEntries.length){
+      md+=`## Key Decisions\n\n`;
+      for(const e of decEntries){
+        md+=`### ${e.task} — ${e.date}\n\n${e.decisions}\n\n`;
+      }
+    }
+  }
+
+  // Session log
+  md+=`## Session Log\n\n`;
+  for(const e of entries){
+    md+=`### ${e.date} — ${e.title} (${e.author}, ${e.task})\n\n`;
+    if(e.summary)md+=`${e.summary}\n\n`;
+    if(e.blockers)md+=`**Blockers:** ${e.blockers}\n\n`;
+    if(e.next)md+=`**Next:** ${e.next}\n\n`;
+    md+=`---\n\n`;
+  }
+
+  // Open items
+  const blockers=entries.filter(e=>e.blockers);
+  if(blockers.length&&(type==='poc'||type==='status')){
+    md+=`## Open Items & Blockers\n\n`;
+    for(const e of blockers){
+      md+=`- **${e.task} (${e.date}):** ${e.blockers}\n`;
+    }
+    md+='\n';
+  }
+
+  md+=`\n---\n\n*Report generated locally without AI assistance. For richer narrative, ensure Claude API access is available.*\n`;
+  return md;
 }
 
 async function pushPOCtoGH(){
@@ -1464,28 +1663,295 @@ async function pushPOCtoGH(){
 }
 
 /* ════════════════════════════════════════════════════════════
-   PASTE PARSER (deterministic — no AI guesswork by default)
+   PASTE PARSER — Powerful deterministic engine (no API needed)
+   Handles: markdown headings (## Section), bullets (- item),
+   tables (| col |), key:value pairs, and free-form prose.
+   Uses fuzzy header matching + financial-figure detection.
    ════════════════════════════════════════════════════════════ */
+
+// Map normalized section names → field IDs. Keys are lowercased & punctuation-stripped.
+const SECTION_MAP={
+  // Title-ish
+  'title':'f-title','session title':'f-title','sessiontitle':'f-title','heading':'f-title',
+  // Task
+  'task':'f-task','module':'f-task','task module':'f-task','taskmodule':'f-task','project task':'f-task',
+  // Summary
+  'summary':'f-summary','overview':'f-summary','session summary':'f-summary','session detail':'f-summary',
+  'sessiondetail':'f-summary','description':'f-summary','what was done':'f-summary','full summary':'f-summary',
+  // Financial — top-line
+  'budget':'f-budget','budget allocated':'f-budget','total budget':'f-budget','allocated budget':'f-budget',
+  'cost':'f-cost','cost incurred':'f-cost','cost this session':'f-cost','session cost':'f-cost','this session cost':'f-cost',
+  'spent':'f-spent','total spent':'f-spent','spent to date':'f-spent','total spent to date':'f-spent','cumulative spent':'f-spent',
+  // Financial — detail
+  'cost breakdown':'f-costdetail','costbreakdown':'f-costdetail','breakdown':'f-costdetail','quotes':'f-costdetail',
+  'quotes received':'f-costdetail','financial':'f-costdetail','financials':'f-costdetail','financial cost':'f-costdetail',
+  'cost detail':'f-costdetail','cost details':'f-costdetail','itemised cost':'f-costdetail','itemized cost':'f-costdetail',
+  'pricing':'f-costdetail','expenses':'f-costdetail',
+  // Materials
+  'materials':'f-materials','components':'f-materials','materials components':'f-materials','parts':'f-materials',
+  'bom':'f-materials','bill of materials':'f-materials','hardware':'f-materials',
+  'materials and components':'f-materials','materials components vendors':'f-materials',
+  // Vendors
+  'vendors':'f-vendors','dealers':'f-vendors','suppliers':'f-vendors','vendors dealers':'f-vendors',
+  'vendor list':'f-vendors','contacts':'f-vendors','vendors contacts':'f-vendors',
+  // Tech
+  'technical':'f-tech','tech':'f-tech','specifications':'f-tech','specs':'f-tech',
+  'technical details':'f-tech','technical detail':'f-tech','architecture':'f-tech',
+  'design decisions':'f-tech','technical specifications':'f-tech','standards':'f-tech',
+  // Decisions
+  'decisions':'f-decisions','decision':'f-decisions','decisions made':'f-decisions',
+  'rationale':'f-decisions','choices':'f-decisions',
+  // Blockers
+  'blockers':'f-blockers','blocker':'f-blockers','open questions':'f-blockers','issues':'f-blockers',
+  'open issues':'f-blockers','risks':'f-blockers','concerns':'f-blockers','unresolved':'f-blockers',
+  // Next steps
+  'next steps':'f-next','next':'f-next','nextsteps':'f-next','action items':'f-next',
+  'actions':'f-next','todo':'f-next','to do':'f-next','followup':'f-next','follow up':'f-next',
+  // Deps
+  'dependencies':'f-deps','deps':'f-deps','waiting on':'f-deps','depends on':'f-deps','blocked on':'f-deps',
+  // Tags
+  'tags':'f-tags','keywords':'f-tags','labels':'f-tags',
+  // Identity
+  'author':'f-author','name':'f-author','your name':'f-author','by':'f-author','date':'f-date',
+};
+
+function normalizeKey(s){
+  return s.toLowerCase()
+    .replace(/[*_`~#]/g,'')
+    .replace(/[—–-]/g,' ')
+    .replace(/[^\w\s]/g,'')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
+function lookupSection(rawHeader){
+  const key=normalizeKey(rawHeader);
+  if(SECTION_MAP[key])return SECTION_MAP[key];
+  // Fuzzy: try to match by first significant word
+  const firstWord=key.split(' ')[0];
+  if(SECTION_MAP[firstWord])return SECTION_MAP[firstWord];
+  // Fuzzy: any registered key contained in the header
+  for(const k in SECTION_MAP){
+    if(k.length>=4&&key.includes(k))return SECTION_MAP[k];
+  }
+  return null;
+}
+
+// Detect financial figures: ₹, $, €, £, INR, USD, EUR, GBP, Rs.
+// Using non-global so .test() doesn't have lastIndex side effects.
+const MONEY_RE=/(?:₹|\$|€|£|(?:INR|USD|EUR|GBP|Rs\.?)\s*)\s*[\d,]+(?:\.\d+)?(?:\s*(?:k|K|L|lakh|crore|cr|M|million|B|billion))?/;
+const MONEY_RE_G=/(?:₹|\$|€|£|(?:INR|USD|EUR|GBP|Rs\.?)\s*)\s*[\d,]+(?:\.\d+)?(?:\s*(?:k|K|L|lakh|crore|cr|M|million|B|billion))?/g;
+
+function extractFirstMoney(text){
+  if(!text)return null;
+  const m=text.match(MONEY_RE_G);
+  return m?m[0].trim():null;
+}
+
+// Try to pull "Budget: ₹X" or "Budget — ₹X" from a line of prose
+function extractInlineMoney(text,labels){
+  if(!text)return null;
+  for(const label of labels){
+    const re=new RegExp(`\\b${label}\\b\\s*[:=—–-]\\s*([^,;\\n]*?(?:₹|\\$|€|£|(?:INR|USD|EUR|GBP|Rs\\.?))\\s*[\\d,]+(?:\\.\\d+)?(?:\\s*(?:k|K|L|lakh|crore|cr|M))?)`,'i');
+    const m=text.match(re);
+    if(m)return m[1].trim();
+  }
+  return null;
+}
+
+function parseDocument(rawText){
+  const result={};
+  const lines=rawText.split(/\r?\n/);
+
+  // Pass 1: split into sections by markdown headings (#, ##, ###) OR bold headings (**X:**)
+  // OR all-caps lines OR "Key:" lines that look like section starts.
+  const sections=[]; // {header, body[]}
+  let currentSection={header:null,body:[]};
+  sections.push(currentSection);
+
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];
+    const trimmed=line.trim();
+
+    // Markdown heading
+    let headerMatch=trimmed.match(/^#{1,6}\s+(.+?)\s*#*$/);
+    if(headerMatch){
+      currentSection={header:headerMatch[1],body:[]};
+      sections.push(currentSection);
+      continue;
+    }
+    // Bold heading like "**Cost Breakdown**" or "**Cost Breakdown:**" on its own line
+    headerMatch=trimmed.match(/^\*\*([^*]+?):?\*\*:?\s*$/);
+    if(headerMatch){
+      currentSection={header:headerMatch[1],body:[]};
+      sections.push(currentSection);
+      continue;
+    }
+    // "Key: value" where key is a known section AND value is short or empty → section header
+    const kvMatch=trimmed.match(/^([A-Za-z][\w\s/&-]{1,40}?):\s*(.*)$/);
+    if(kvMatch){
+      const possibleField=lookupSection(kvMatch[1]);
+      if(possibleField){
+        currentSection={header:kvMatch[1],body:kvMatch[2]?[kvMatch[2]]:[]};
+        sections.push(currentSection);
+        continue;
+      }
+    }
+    currentSection.body.push(line);
+  }
+
+  // Pass 2: assign each section's body to the correct field
+  for(const sec of sections){
+    if(!sec.header){
+      // No header — this is preamble. If it has content and we have no summary yet, treat as summary.
+      const body=sec.body.join('\n').trim();
+      if(body&&!result['f-summary']){
+        result['f-summary']=body;
+      }else if(body&&result['f-summary']){
+        result['f-summary']+='\n\n'+body;
+      }
+      continue;
+    }
+    const fieldId=lookupSection(sec.header);
+    if(!fieldId){
+      // Unknown section — append to summary so we don't lose data
+      const body=sec.body.join('\n').trim();
+      if(body){
+        const tagged=`### ${sec.header}\n${body}`;
+        result['f-summary']=result['f-summary']?result['f-summary']+'\n\n'+tagged:tagged;
+      }
+      continue;
+    }
+    const body=sec.body.join('\n').trim();
+    if(body){
+      result[fieldId]=result[fieldId]?result[fieldId]+'\n\n'+body:body;
+    }
+  }
+
+  // Pass 3: financial-figure rescue — scan ALL text for money figures if budget/cost/spent are empty
+  const allText=rawText;
+  if(!result['f-budget']){
+    const v=extractInlineMoney(allText,['budget','allocated','budget allocated','total budget']);
+    if(v)result['f-budget']=v;
+  }
+  if(!result['f-cost']){
+    const v=extractInlineMoney(allText,['cost this session','session cost','cost incurred','this session','cost']);
+    if(v)result['f-cost']=v;
+  }
+  if(!result['f-spent']){
+    const v=extractInlineMoney(allText,['total spent','spent to date','spent','cumulative']);
+    if(v)result['f-spent']=v;
+  }
+
+  // Pass 4: if costdetail field is empty but the doc contains a markdown table with money in it, capture it
+  if(!result['f-costdetail']){
+    const tableLines=[];
+    let inTable=false;
+    for(const line of lines){
+      const t=line.trim();
+      if(/^\|.*\|$/.test(t)){
+        if(MONEY_RE.test(t)||inTable||tableLines.length>0){
+          tableLines.push(line);inTable=true;
+        }else{tableLines.push(line);}
+      }else if(inTable){
+        if(tableLines.some(l=>MONEY_RE.test(l))){
+          result['f-costdetail']=tableLines.join('\n').trim();
+        }
+        tableLines.length=0;inTable=false;
+      }
+    }
+    if(inTable&&tableLines.some(l=>MONEY_RE.test(l))){
+      result['f-costdetail']=tableLines.join('\n').trim();
+    }
+  }
+
+  // Pass 5: title fallback — first markdown H1 or first non-empty line
+  if(!result['f-title']){
+    const h1=lines.find(l=>/^#\s+/.test(l.trim()));
+    if(h1)result['f-title']=h1.replace(/^#+\s*/,'').trim();
+    else{
+      const firstLine=lines.find(l=>l.trim()&&!l.trim().startsWith('#'));
+      if(firstLine&&firstLine.length<120)result['f-title']=firstLine.trim();
+    }
+  }
+
+  // Pass 6: type inference from content
+  if(!result['f-type']){
+    const lower=allText.toLowerCase();
+    if(/\b(blocked|blocker|stuck|cannot proceed|waiting for)\b/.test(lower))result['f-type']='blocker';
+    else if(/\b(decided|decision|chose|selected|finalised|finalized)\b/.test(lower))result['f-type']='decision';
+    else if(/\b(researched|investigated|explored|studied|literature|references?)\b/.test(lower))result['f-type']='research';
+    else if(/\b(idea|brainstorm|concept|proposal|considered)\b/.test(lower))result['f-type']='ideation';
+  }
+
+  return result;
+}
+
 function parsePaste(){
-  const txt=document.getElementById('f-paste').value.trim();if(!txt)return;
-  const fmap={'title':'f-title','task':'f-task','summary':'f-summary','budget':'f-budget','cost incurred':'f-cost','cost this session':'f-cost','total spent':'f-spent','cost breakdown':'f-costdetail','quotes':'f-costdetail','materials':'f-materials','components':'f-materials','vendors':'f-vendors','dealers':'f-vendors','technical':'f-tech','specifications':'f-tech','decisions':'f-decisions','decision':'f-decisions','blockers':'f-blockers','open questions':'f-blockers','next steps':'f-next','dependencies':'f-deps','tags':'f-tags'};
-  const lines=txt.split('\n');let cur='',acc=[];let any=false;
-  const commit=()=>{if(cur&&acc.length){const id=fmap[cur];if(id){const el=document.getElementById(id);if(el){el.value=acc.join('\n').trim();any=true;}}}cur='';acc=[];};
-  for(const line of lines){const l=line.trim();if(!l)continue;const c=l.indexOf(':');if(c>0){const k=l.slice(0,c).toLowerCase();if(fmap[k]!==undefined){commit();cur=k;const v=l.slice(c+1).trim();if(v)acc.push(v);continue;}}if(cur)acc.push(l);}
-  commit();
-  if(any){
-    document.getElementById('f-paste').value='';
-    showToast('Parsed — review all fields','#2563EB','#fff');
-  }else{
-    // Fallback: ask Claude to structure
-    showToast('No fields matched — asking Claude to structure…','#8B5CF6','#fff');
-    aiStructure(txt).then(json=>{
-      const map={title:'f-title',task:'f-task',summary:'f-summary',budget:'f-budget',cost:'f-cost',spent:'f-spent',costdetail:'f-costdetail',materials:'f-materials',vendors:'f-vendors',tech:'f-tech',decisions:'f-decisions',blockers:'f-blockers',next:'f-next',deps:'f-deps'};
-      Object.entries(map).forEach(([k,id])=>{if(json[k]){const el=document.getElementById(id);if(el)el.value=json[k];}});
-      if(json.tags?.length)document.getElementById('f-tags').value=json.tags.join(', ');
+  const txt=document.getElementById('f-paste').value.trim();
+  if(!txt){showToast('Paste content first','#D97706','#fff');return;}
+  runDeterministicParse(txt);
+}
+
+// Optional: Claude-powered enhancement. When API is unreachable in this
+// environment, falls back to the deterministic parser so the user always
+// gets a result.
+async function enhanceWithAI(){
+  const txt=document.getElementById('f-paste').value.trim();
+  if(!txt){
+    showToast('Paste content first to enhance','#D97706','#fff');
+    return;
+  }
+  showToast('Asking Claude to structure…','#8B5CF6','#fff');
+  try{
+    const json=await aiStructure(txt);
+    const map={title:'f-title',task:'f-task',summary:'f-summary',budget:'f-budget',cost:'f-cost',spent:'f-spent',costdetail:'f-costdetail',materials:'f-materials',vendors:'f-vendors',tech:'f-tech',decisions:'f-decisions',blockers:'f-blockers',next:'f-next',deps:'f-deps',author:'f-author'};
+    let filled=0;
+    Object.entries(map).forEach(([k,id])=>{
+      if(json[k]&&String(json[k]).trim()){
+        const el=document.getElementById(id);
+        if(el){el.value=String(json[k]).trim();filled++;}
+      }
+    });
+    if(json.tags&&Array.isArray(json.tags)&&json.tags.length){
+      document.getElementById('f-tags').value=json.tags.join(', ');filled++;
+    }
+    if(json.type&&['work','ideation','decision','research','blocker'].includes(json.type)){
+      document.getElementById('f-type').value=json.type;
+    }
+    if(filled){
       document.getElementById('f-paste').value='';
-      showToast('Structured by Claude — review fields','#2563EB','#fff');
-    }).catch(()=>showToast('Could not parse — fill manually','#D97706','#fff'));
+      showToast(`AI structured ${filled} field${filled===1?'':'s'}`,'#10B981','#fff');
+    }else{
+      // AI returned nothing useful — fall back to deterministic
+      runDeterministicParse(txt,'AI returned nothing — used Parse instead');
+    }
+  }catch(err){
+    // API unreachable / network blocked / CORS / etc — fall back gracefully
+    runDeterministicParse(txt,'AI unreachable — used Parse instead (works offline)');
+  }
+}
+
+// Shared body of parsePaste — also used as AI fallback.
+function runDeterministicParse(txt,fallbackMsg){
+  try{
+    const parsed=parseDocument(txt);
+    let filled=0;
+    Object.entries(parsed).forEach(([id,v])=>{
+      const el=document.getElementById(id);
+      if(el&&v){el.value=v;filled++;}
+    });
+    if(filled===0){
+      document.getElementById('f-summary').value=txt;
+      showToast(fallbackMsg||'Couldn\'t identify sections — full text in Summary','#D97706','#fff');
+    }else{
+      document.getElementById('f-paste').value='';
+      showToast(fallbackMsg||`Parsed ${filled} field${filled===1?'':'s'} — review and edit`,fallbackMsg?'#D97706':'#10B981','#fff');
+    }
+  }catch(err){
+    document.getElementById('f-summary').value=txt;
+    showToast('Parser error — full text in Summary','#EF4444','#fff');
+    console.error(err);
   }
 }
 
