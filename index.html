@@ -1,199 +1,615 @@
-
-<h2 class="sr-only">Aerospace Project Journal — GitHub sync enabled, full session capture with AI merge</h2>
+<h2 class="sr-only">Aerospace Project Journal — GitHub sync enabled, premium UI, smart merge / replace / version</h2>
 <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+
+/* ════════════════════════════════════════════════════════════
+   PREMIUM DESIGN SYSTEM
+   Inspired by Apple (clarity), Tesla (depth), Bose (restraint)
+   ════════════════════════════════════════════════════════════ */
 :root{
-  --font:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",sans-serif;
-  --mono:"SF Mono","Fira Code","Roboto Mono",monospace;
-  --radius:10px;--radius-sm:6px;--radius-xs:4px;
-  --ease:cubic-bezier(.25,.1,.25,1);
-  --dur:160ms;
-  --sidebar:220px;
-  --accent:#0071E3;
-  --accent-h:#0077ED;
-  --c-work:#28A745;--c-idea:#0071E3;--c-dec:#D97706;--c-blk:#DC2626;--c-res:#7C3AED;
-  --bg-work:rgba(40,167,69,.1);--bg-idea:rgba(0,113,227,.1);--bg-dec:rgba(217,119,6,.1);--bg-blk:rgba(220,38,38,.1);--bg-res:rgba(124,58,237,.1);
+  /* Type system — Inter Tight (display) + JetBrains Mono (data) */
+  --font:"Inter Tight",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono","SF Mono",ui-monospace,monospace;
+
+  /* Geometry */
+  --r-xl:14px;--r-lg:10px;--r-md:8px;--r-sm:6px;--r-xs:4px;
+  --ease:cubic-bezier(.32,.72,0,1);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --dur:200ms;--dur-slow:420ms;
+  --sidebar:236px;
+
+  /* ─── BASE PALETTE (state-aware) ─── */
+  /* Disconnected: monochrome, calm, neutral graphite */
+  --ink:#0A0A0B;
+  --ink-2:#1A1A1D;
+  --paper:#FAFAFA;
+  --paper-2:#F2F2F4;
+  --paper-3:#EAEAEE;
+  --line:rgba(10,10,11,.08);
+  --line-strong:rgba(10,10,11,.14);
+  --text:#0A0A0B;
+  --text-2:#5A5A63;
+  --text-3:#9296A0;
+  --accent:#2563EB;          /* deep electric blue — Bose-like */
+  --accent-h:#1D4ED8;
+  --accent-soft:rgba(37,99,235,.08);
+
+  /* Type colors (entry categories) — refined */
+  --c-work:#10B981;
+  --c-idea:#2563EB;
+  --c-dec:#F59E0B;
+  --c-blk:#EF4444;
+  --c-res:#8B5CF6;
+  --bg-work:rgba(16,185,129,.10);
+  --bg-idea:rgba(37,99,235,.10);
+  --bg-dec:rgba(245,158,11,.10);
+  --bg-blk:rgba(239,68,68,.10);
+  --bg-res:rgba(139,92,246,.10);
+
+  /* Glow tokens — only activate in connected state */
+  --glow-accent:0 0 0 0 transparent;
+  --glow-soft:0 1px 2px rgba(10,10,11,.04),0 1px 3px rgba(10,10,11,.06);
+  --glow-card:0 1px 2px rgba(10,10,11,.04);
+  --glow-elev:0 4px 16px -4px rgba(10,10,11,.08),0 2px 4px rgba(10,10,11,.04);
+
+  /* Header gradient (disconnected = static) */
+  --hdr-bg:linear-gradient(180deg,#FFFFFF 0%,#FAFAFA 100%);
+  --bg-page:linear-gradient(180deg,#F5F5F7 0%,#EFEFF2 100%);
 }
-body{font-family:var(--font);font-size:14px;background:var(--color-background-tertiary);color:var(--color-text-primary);min-height:600px;position:relative}
+
+/* ─── CONNECTED STATE — system comes alive ─── */
+:root.connected{
+  --accent:#3B82F6;
+  --accent-h:#2563EB;
+  --accent-soft:rgba(59,130,246,.12);
+  --line:rgba(10,10,11,.10);
+  --line-strong:rgba(10,10,11,.18);
+  --glow-card:0 1px 2px rgba(10,10,11,.04),0 0 0 1px rgba(59,130,246,.04);
+  --glow-elev:0 4px 24px -6px rgba(59,130,246,.18),0 2px 6px rgba(10,10,11,.05);
+  --hdr-bg:linear-gradient(180deg,#FFFFFF 0%,#FAFBFF 100%);
+  --bg-page:radial-gradient(1200px 600px at 80% -200px,rgba(59,130,246,.06) 0%,transparent 60%),linear-gradient(180deg,#F5F5F7 0%,#EFEFF2 100%);
+}
+
+html{height:100%}
+body{
+  font-family:var(--font);font-size:14px;line-height:1.5;
+  background:var(--bg-page);
+  color:var(--text);
+  min-height:100vh;
+  letter-spacing:-.01em;
+  transition:background var(--dur-slow) var(--ease);
+}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
 
-/* ── APP SHELL ── */
-.app{display:flex;flex-direction:column;min-height:600px}
+/* ════════════════════════════════════════════════════════════
+   APP SHELL
+   ════════════════════════════════════════════════════════════ */
+.app{display:flex;flex-direction:column;min-height:100vh}
 
-/* ── HEADER ── */
-.hdr{background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.hdr-l{display:flex;align-items:center;gap:12px}
-.hdr-mark{width:30px;height:30px;border-radius:var(--radius-sm);background:var(--color-text-primary);display:flex;align-items:center;justify-content:center}
-.hdr-mark svg{width:16px;height:16px;fill:var(--color-background-primary)}
-.hdr-info h1{font-size:14px;font-weight:600;letter-spacing:-.2px;color:var(--color-text-primary)}
-.hdr-info p{font-size:11px;color:var(--color-text-secondary);margin-top:1px;letter-spacing:.2px}
-.gh-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;border:0.5px solid var(--color-border-secondary);font-size:12px;font-weight:500;cursor:pointer;transition:all var(--dur) var(--ease);background:var(--color-background-secondary);color:var(--color-text-secondary)}
-.gh-pill:hover{border-color:var(--color-border-primary);color:var(--color-text-primary)}
-.gh-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--color-border-secondary);flex-shrink:0;transition:background var(--dur) var(--ease)}
-.gh-pill.on .dot{background:#28A745}
-.gh-pill.on{color:var(--color-text-primary);border-color:rgba(40,167,69,.4)}
+/* ────────── HEADER ────────── */
+.hdr{
+  background:var(--hdr-bg);
+  backdrop-filter:saturate(180%) blur(20px);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid var(--line);
+  padding:0 24px;height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;position:sticky;top:0;z-index:50;
+  transition:background var(--dur-slow) var(--ease),border-color var(--dur-slow) var(--ease);
+}
+.hdr-l{display:flex;align-items:center;gap:14px}
+.hdr-mark{
+  width:34px;height:34px;border-radius:9px;
+  background:linear-gradient(135deg,#0A0A0B 0%,#2A2A30 100%);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 1px 2px rgba(0,0,0,.1),inset 0 1px 0 rgba(255,255,255,.08);
+  transition:transform var(--dur) var(--ease),box-shadow var(--dur-slow) var(--ease);
+}
+:root.connected .hdr-mark{
+  background:linear-gradient(135deg,#0A0A0B 0%,#1E40AF 100%);
+  box-shadow:0 1px 2px rgba(0,0,0,.1),0 0 0 1px rgba(59,130,246,.2),0 0 12px rgba(59,130,246,.18),inset 0 1px 0 rgba(255,255,255,.1);
+}
+.hdr-mark:hover{transform:scale(1.05)}
+.hdr-mark svg{width:17px;height:17px;fill:#FAFAFA}
+
+.hdr-info h1{font-size:15px;font-weight:600;letter-spacing:-.015em;color:var(--text)}
+.hdr-info p{font-size:11px;color:var(--text-3);margin-top:2px;letter-spacing:.01em;font-weight:500}
+
+.gh-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:7px 14px;border-radius:100px;
+  border:1px solid var(--line-strong);
+  font-size:12.5px;font-weight:500;
+  cursor:pointer;background:#FFFFFF;color:var(--text-2);
+  transition:all var(--dur) var(--ease);
+  box-shadow:var(--glow-soft);
+  user-select:none;
+}
+.gh-pill:hover{border-color:var(--text-2);color:var(--text);transform:translateY(-1px);box-shadow:0 2px 8px rgba(10,10,11,.08)}
+.gh-pill:active{transform:translateY(0)}
+.gh-pill .dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--text-3);flex-shrink:0;
+  transition:background var(--dur) var(--ease),box-shadow var(--dur) var(--ease);
+}
+.gh-pill.on{
+  color:var(--text);
+  border-color:rgba(16,185,129,.45);
+  background:linear-gradient(180deg,#FFFFFF 0%,#F0FDF4 100%);
+}
+.gh-pill.on .dot{
+  background:#10B981;
+  box-shadow:0 0 0 3px rgba(16,185,129,.18),0 0 8px rgba(16,185,129,.4);
+  animation:livepulse 2.4s ease-in-out infinite;
+}
 .gh-pill.busy .dot{background:var(--accent);animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes livepulse{
+  0%,100%{box-shadow:0 0 0 3px rgba(16,185,129,.18),0 0 8px rgba(16,185,129,.4)}
+  50%{box-shadow:0 0 0 5px rgba(16,185,129,.06),0 0 12px rgba(16,185,129,.5)}
+}
 
-/* ── BODY LAYOUT ── */
+/* ────────── BODY LAYOUT ────────── */
 .body{display:flex;flex:1;min-height:0}
 
-/* ── SIDEBAR ── */
-.sb{width:var(--sidebar);flex-shrink:0;background:var(--color-background-primary);border-right:0.5px solid var(--color-border-tertiary);padding:16px 0;overflow-y:auto}
-.sb-sec{padding:0 14px;margin-bottom:20px}
-.sb-lbl{font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:8px;padding-bottom:6px;border-bottom:0.5px solid var(--color-border-tertiary)}
+/* ────────── SIDEBAR ────────── */
+.sb{
+  width:var(--sidebar);flex-shrink:0;
+  background:rgba(255,255,255,.6);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border-right:1px solid var(--line);
+  padding:20px 0;overflow-y:auto;
+  transition:background var(--dur-slow) var(--ease);
+}
+:root.connected .sb{background:rgba(255,255,255,.75)}
+.sb-sec{padding:0 16px;margin-bottom:22px}
+.sb-lbl{
+  font-size:10px;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--text-3);
+  margin-bottom:10px;padding-bottom:8px;
+  border-bottom:1px solid var(--line);
+}
 
 /* Stats */
 .stat{display:flex;justify-content:space-between;align-items:center;padding:5px 0}
-.stat-l{font-size:12px;color:var(--color-text-secondary)}
-.stat-v{font-size:13px;font-weight:600;font-family:var(--mono);color:var(--color-text-primary)}
-.stat-v.green{color:#28A745}.stat-v.amber{color:#D97706}
+.stat-l{font-size:12.5px;color:var(--text-2);font-weight:500}
+.stat-v{font-size:13px;font-weight:600;font-family:var(--mono);color:var(--text);letter-spacing:-.02em}
+.stat-v.green{color:#059669}
+.stat-v.amber{color:#D97706}
 
-/* Filter btns */
-.f-btn{width:100%;display:flex;align-items:center;gap:8px;padding:6px 8px;border:none;background:none;cursor:pointer;border-radius:var(--radius-sm);font-size:13px;color:var(--color-text-secondary);font-family:var(--font);transition:all var(--dur) var(--ease);text-align:left;margin-bottom:1px}
-.f-btn:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
-.f-btn.act{background:var(--color-background-secondary);color:var(--color-text-primary);font-weight:500}
-.f-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+/* Filter buttons */
+.f-btn{
+  width:100%;display:flex;align-items:center;gap:10px;
+  padding:7px 9px;border:none;background:none;cursor:pointer;
+  border-radius:var(--r-sm);
+  font-size:13px;color:var(--text-2);font-family:var(--font);
+  font-weight:500;
+  transition:all var(--dur) var(--ease);
+  text-align:left;margin-bottom:1px;
+  letter-spacing:-.005em;
+}
+.f-btn:hover{background:var(--paper-2);color:var(--text);transform:translateX(2px)}
+.f-btn.act{background:var(--paper-3);color:var(--text);font-weight:600}
+.f-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:transform var(--dur) var(--ease)}
+.f-btn:hover .f-dot{transform:scale(1.2)}
 
-/* Action btns */
-.a-btn{width:100%;display:flex;align-items:center;gap:8px;padding:7px 10px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-weight:500;color:var(--color-text-secondary);font-family:var(--font);transition:all var(--dur) var(--ease);margin-bottom:6px;text-align:left}
-.a-btn:hover{border-color:var(--color-border-primary);color:var(--color-text-primary);background:var(--color-background-primary)}
-.a-btn.accent-btn{background:var(--accent);color:#fff;border-color:transparent;font-weight:600}
-.a-btn.accent-btn:hover{background:var(--accent-h)}
-.a-btn svg{width:13px;height:13px;flex-shrink:0;opacity:.7}
+/* Action buttons (sidebar) */
+.a-btn{
+  width:100%;display:flex;align-items:center;gap:9px;
+  padding:9px 11px;
+  border:1px solid var(--line);background:#FFFFFF;
+  border-radius:var(--r-md);cursor:pointer;
+  font-size:12.5px;font-weight:500;color:var(--text-2);
+  font-family:var(--font);
+  transition:all var(--dur) var(--ease);
+  margin-bottom:7px;text-align:left;
+  box-shadow:var(--glow-soft);
+}
+.a-btn:hover{border-color:var(--text-2);color:var(--text);transform:translateY(-1px);box-shadow:0 2px 6px rgba(10,10,11,.06)}
+.a-btn:active{transform:translateY(0)}
+.a-btn.accent-btn{
+  background:linear-gradient(180deg,var(--accent) 0%,var(--accent-h) 100%);
+  color:#FFFFFF;border-color:transparent;font-weight:600;
+  box-shadow:0 1px 2px rgba(37,99,235,.3),inset 0 1px 0 rgba(255,255,255,.15);
+}
+.a-btn.accent-btn:hover{
+  background:linear-gradient(180deg,var(--accent-h) 0%,#1E3FB8 100%);
+  color:#FFFFFF;
+  box-shadow:0 4px 14px rgba(37,99,235,.4),inset 0 1px 0 rgba(255,255,255,.15);
+}
+:root.connected .a-btn.accent-btn{box-shadow:0 1px 2px rgba(59,130,246,.4),0 0 18px rgba(59,130,246,.18),inset 0 1px 0 rgba(255,255,255,.15)}
+.a-btn svg{width:14px;height:14px;flex-shrink:0;opacity:.75}
+.a-btn.accent-btn svg{opacity:1}
 
-/* ── MAIN ── */
-.main{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:16px}
+/* ────────── MAIN ────────── */
+.main{
+  flex:1;overflow-y:auto;
+  padding:24px 28px 40px;
+  display:flex;flex-direction:column;gap:18px;
+  scroll-behavior:smooth;
+}
 
-/* ── CONFIG PANEL ── */
-.cfg{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--radius);padding:20px;display:none}
+/* ────────── CONFIG PANEL ────────── */
+.cfg{
+  background:#FFFFFF;
+  border:1px solid var(--line);
+  border-radius:var(--r-xl);
+  padding:24px;display:none;
+  box-shadow:var(--glow-card);
+  animation:slideIn .35s var(--ease-out);
+}
 .cfg.open{display:block}
-.cfg-hdr{font-size:13px;font-weight:600;color:var(--color-text-primary);margin-bottom:4px}
-.cfg-sub{font-size:12px;color:var(--color-text-secondary);margin-bottom:16px;line-height:1.5}
-.fg{display:flex;flex-direction:column;gap:5px}
-.fl{font-size:11px;font-weight:500;letter-spacing:.3px;color:var(--color-text-secondary)}
-input[type=text],input[type=password],select,textarea{background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--radius-sm);color:var(--color-text-primary);font-family:var(--font);font-size:13px;padding:8px 11px;width:100%;outline:none;transition:border-color var(--dur) var(--ease)}
-input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,113,227,.12)}
-select option{background:var(--color-background-primary)}
-textarea{resize:vertical;line-height:1.6}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.cfg-hdr{font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;letter-spacing:-.015em}
+.cfg-sub{font-size:13px;color:var(--text-2);margin-bottom:18px;line-height:1.55}
+.cfg-sub code{font-family:var(--mono);font-size:11.5px;background:var(--paper-2);padding:3px 7px;border-radius:5px;color:var(--text)}
+
+.fg{display:flex;flex-direction:column;gap:6px}
+.fl{font-size:11px;font-weight:600;letter-spacing:.03em;color:var(--text-2);text-transform:uppercase}
+
+input[type=text],input[type=password],input[type=date],select,textarea{
+  background:#FFFFFF;
+  border:1px solid var(--line-strong);
+  border-radius:var(--r-md);
+  color:var(--text);font-family:var(--font);
+  font-size:13.5px;font-weight:400;
+  padding:10px 13px;width:100%;outline:none;
+  transition:border-color var(--dur) var(--ease),box-shadow var(--dur) var(--ease),background var(--dur) var(--ease);
+  letter-spacing:-.005em;
+}
+input:hover,select:hover,textarea:hover{border-color:var(--text-3)}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 4px var(--accent-soft);
+  background:#FFFFFF;
+}
+input::placeholder,textarea::placeholder{color:var(--text-3);font-weight:400}
+select option{background:#FFFFFF}
+textarea{resize:vertical;line-height:1.6;font-family:var(--font)}
+
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .full{grid-column:1/-1}
-.row-gap{display:flex;flex-direction:column;gap:10px}
 
-/* Buttons */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);transition:all var(--dur) var(--ease)}
-.btn:hover{border-color:var(--color-border-primary);color:var(--color-text-primary);transform:translateY(-1px)}
+/* ────────── BUTTONS (universal) ────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 18px;border-radius:var(--r-md);
+  font-family:var(--font);font-size:13px;font-weight:500;
+  cursor:pointer;
+  border:1px solid var(--line-strong);
+  background:#FFFFFF;color:var(--text);
+  transition:all var(--dur) var(--ease);
+  letter-spacing:-.005em;
+  white-space:nowrap;
+  box-shadow:var(--glow-soft);
+  user-select:none;
+}
+.btn:hover{border-color:var(--text-2);transform:translateY(-1px);box-shadow:0 3px 10px rgba(10,10,11,.08)}
 .btn:active{transform:translateY(0) scale(.98)}
-.btn-p{background:var(--accent);color:#fff;border-color:transparent;font-weight:600}
-.btn-p:hover{background:var(--accent-h);color:#fff}
-.btn-gh{background:#24292F;color:#fff;border-color:transparent;font-weight:600}
-.btn-gh:hover{background:#32383E;color:#fff}
-.btn-row{display:flex;gap:8px;justify-content:flex-end;padding-top:16px;border-top:0.5px solid var(--color-border-tertiary);margin-top:4px}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
 
-/* ── COMMIT STRIP ── */
-.cstrip{display:none;padding:10px 14px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--radius-sm);font-size:12px;color:var(--color-text-secondary)}
-.cstrip.show{display:flex;align-items:center;gap:8px}
-.cstrip-dot{width:6px;height:6px;border-radius:50%;background:#28A745;flex-shrink:0}
-.cstrip a{color:var(--accent);text-decoration:none;font-weight:500}.cstrip a:hover{text-decoration:underline}
+.btn-p{
+  background:linear-gradient(180deg,var(--accent) 0%,var(--accent-h) 100%);
+  color:#FFFFFF;border-color:transparent;font-weight:600;
+  box-shadow:0 1px 2px rgba(37,99,235,.3),inset 0 1px 0 rgba(255,255,255,.15);
+}
+.btn-p:hover{
+  background:linear-gradient(180deg,var(--accent-h) 0%,#1E3FB8 100%);
+  color:#FFFFFF;
+  box-shadow:0 6px 18px rgba(37,99,235,.35),inset 0 1px 0 rgba(255,255,255,.15);
+}
+:root.connected .btn-p:hover{box-shadow:0 6px 22px rgba(59,130,246,.45),0 0 24px rgba(59,130,246,.2),inset 0 1px 0 rgba(255,255,255,.15)}
 
-/* ── FORM PANEL ── */
-.form-panel{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--radius);overflow:hidden}
-.form-panel-hdr{padding:16px 20px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between}
-.form-panel-hdr h2{font-size:14px;font-weight:600;color:var(--color-text-primary)}
-.form-panel-hdr span{font-size:11px;color:var(--color-text-tertiary);font-family:var(--mono)}
-.form-body{padding:20px;display:flex;flex-direction:column;gap:16px}
+.btn-gh{
+  background:linear-gradient(180deg,#1F2328 0%,#0E1116 100%);
+  color:#FFFFFF;border-color:transparent;font-weight:600;
+  box-shadow:0 1px 2px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.08);
+}
+.btn-gh:hover{
+  background:linear-gradient(180deg,#2A2F36 0%,#1A1F26 100%);
+  color:#FFFFFF;
+  box-shadow:0 6px 18px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.08);
+}
 
-/* Form sections */
-.fsec{display:flex;flex-direction:column;gap:10px}
-.fsec-lbl{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--color-text-tertiary);padding-bottom:8px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.btn-row{display:flex;gap:10px;justify-content:flex-end;padding-top:18px;border-top:1px solid var(--line);margin-top:6px;flex-wrap:wrap}
 
-/* Tip box */
-.tip{background:var(--color-background-secondary);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--color-text-secondary);line-height:1.6;border-left:2px solid var(--accent)}
-.tip strong{color:var(--color-text-primary);font-weight:600;display:block;margin-bottom:2px;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+/* ────────── COMMIT STRIP ────────── */
+.cstrip{
+  display:none;padding:12px 16px;
+  background:linear-gradient(180deg,#FFFFFF 0%,#F0FDF4 100%);
+  border:1px solid rgba(16,185,129,.25);
+  border-radius:var(--r-md);
+  font-size:12.5px;color:var(--text-2);
+  box-shadow:var(--glow-soft);
+  animation:slideIn .35s var(--ease-out);
+}
+.cstrip.show{display:flex;align-items:center;gap:10px}
+.cstrip-dot{
+  width:7px;height:7px;border-radius:50%;background:#10B981;flex-shrink:0;
+  box-shadow:0 0 0 3px rgba(16,185,129,.2),0 0 8px rgba(16,185,129,.4);
+}
+.cstrip a{color:var(--accent);text-decoration:none;font-weight:600}
+.cstrip a:hover{text-decoration:underline}
+
+/* ────────── FORM PANEL ────────── */
+.form-panel{
+  background:#FFFFFF;
+  border:1px solid var(--line);
+  border-radius:var(--r-xl);overflow:hidden;
+  box-shadow:var(--glow-card);
+  transition:box-shadow var(--dur-slow) var(--ease);
+}
+:root.connected .form-panel{box-shadow:var(--glow-elev)}
+.form-panel-hdr{
+  padding:18px 22px;
+  border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(180deg,#FFFFFF 0%,#FAFAFA 100%);
+}
+.form-panel-hdr h2{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-.015em}
+.form-panel-hdr span{font-size:11px;color:var(--text-3);font-family:var(--mono);font-weight:500}
+.form-body{padding:22px;display:flex;flex-direction:column;gap:20px}
+
+.fsec{display:flex;flex-direction:column;gap:12px}
+.fsec-lbl{
+  font-size:10px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text-3);
+  padding-bottom:9px;border-bottom:1px solid var(--line);
+}
+
+/* Tip box — refined */
+.tip{
+  background:linear-gradient(180deg,var(--accent-soft) 0%,transparent 100%);
+  border:1px solid rgba(37,99,235,.15);
+  border-radius:var(--r-md);
+  padding:14px 16px;font-size:12.5px;color:var(--text-2);
+  line-height:1.6;
+  position:relative;
+}
+.tip strong{color:var(--text);font-weight:600;display:block;margin-bottom:3px;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
 
 /* Paste area */
-.paste-wrap{background:var(--color-background-secondary);border:0.5px dashed var(--color-border-secondary);border-radius:var(--radius-sm);padding:12px 14px}
-.paste-lbl{font-size:11px;font-weight:500;color:var(--color-text-tertiary);margin-bottom:6px;display:flex;align-items:center;gap:5px}
-.paste-wrap textarea{background:transparent;border:none;padding:0;font-size:12px}
-.paste-wrap textarea:focus{box-shadow:none}
+.paste-wrap{
+  background:var(--paper-2);
+  border:1.5px dashed var(--line-strong);
+  border-radius:var(--r-md);
+  padding:14px 16px;
+  transition:border-color var(--dur) var(--ease),background var(--dur) var(--ease);
+}
+.paste-wrap:hover{border-color:var(--accent);background:var(--accent-soft)}
+.paste-lbl{
+  font-size:11.5px;font-weight:500;color:var(--text-2);
+  margin-bottom:8px;display:flex;align-items:center;gap:6px;
+}
+.paste-wrap textarea{background:transparent;border:none;padding:0;font-size:12.5px}
+.paste-wrap textarea:focus{box-shadow:none;background:transparent}
 
-/* ── ENTRIES ── */
-.entries-hdr{display:flex;align-items:center;justify-content:space-between}
-.entries-hdr h2{font-size:14px;font-weight:600;color:var(--color-text-primary)}
-.entry-count{font-size:12px;color:var(--color-text-tertiary);font-family:var(--mono)}
+/* ────────── ENTRIES ────────── */
+.entries-hdr{display:flex;align-items:center;justify-content:space-between;padding:0 2px;margin-top:8px}
+.entries-hdr h2{font-size:17px;font-weight:600;color:var(--text);letter-spacing:-.02em}
+.entry-count{font-size:12px;color:var(--text-3);font-family:var(--mono);font-weight:500}
+
 .search-wrap{position:relative}
-.search-wrap input{padding-left:34px}
-.search-ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--color-text-tertiary);pointer-events:none}
+.search-wrap input{padding-left:38px}
+.search-ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--text-3);pointer-events:none}
 
-/* Entry card */
-.entry{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--radius);overflow:hidden;transition:border-color var(--dur) var(--ease),transform var(--dur) var(--ease)}
-.entry:hover{border-color:var(--color-border-secondary);transform:translateY(-1px)}
+/* Entry card — premium */
+.entry{
+  background:#FFFFFF;
+  border:1px solid var(--line);
+  border-radius:var(--r-xl);overflow:hidden;
+  transition:all var(--dur) var(--ease);
+  box-shadow:var(--glow-card);
+}
+.entry:hover{
+  border-color:var(--line-strong);
+  transform:translateY(-2px);
+  box-shadow:var(--glow-elev);
+}
 .e-bar{height:3px;width:100%}
-.e-bar.work{background:var(--c-work)}.e-bar.ideation{background:var(--c-idea)}.e-bar.decision{background:var(--c-dec)}.e-bar.blocker{background:var(--c-blk)}.e-bar.research{background:var(--c-res)}
-.ehdr{padding:14px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:0.5px solid var(--color-border-tertiary)}
-.emeta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
-.etitle{font-size:14px;font-weight:600;color:var(--color-text-primary);letter-spacing:-.1px}
+.e-bar.work{background:var(--c-work)}
+.e-bar.ideation{background:var(--c-idea)}
+.e-bar.decision{background:var(--c-dec)}
+.e-bar.blocker{background:var(--c-blk)}
+.e-bar.research{background:var(--c-res)}
+
+.ehdr{padding:16px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;border-bottom:1px solid var(--line)}
+.emeta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:7px}
+.etitle{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-.015em;line-height:1.35}
 
 /* Badges */
-.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;line-height:1.4}
-.badge-date{color:var(--color-text-tertiary);font-family:var(--mono);font-size:10px}
-.badge-type{background:var(--bg-work);color:var(--c-work)}.badge-type.ideation{background:var(--bg-idea);color:var(--c-idea)}.badge-type.decision{background:var(--bg-dec);color:var(--c-dec)}.badge-type.blocker{background:var(--bg-blk);color:var(--c-blk)}.badge-type.research{background:var(--bg-res);color:var(--c-res)}
-.badge-author{background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary)}
-.badge-task{background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary);font-family:var(--mono);font-size:10px}
-.sync-ok{color:#28A745;font-size:11px;font-weight:500;display:flex;align-items:center;gap:4px}
-.sync-no{color:var(--color-text-tertiary);font-size:11px}
-.sync-ok a{color:#28A745;text-decoration:none;font-weight:600}.sync-ok a:hover{text-decoration:underline}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:100px;font-size:11px;font-weight:500;line-height:1.4;letter-spacing:.005em}
+.badge-date{color:var(--text-3);font-family:var(--mono);font-size:10.5px;font-weight:500}
+.badge-type{background:var(--bg-work);color:var(--c-work)}
+.badge-type.ideation{background:var(--bg-idea);color:var(--c-idea)}
+.badge-type.decision{background:var(--bg-dec);color:var(--c-dec)}
+.badge-type.blocker{background:var(--bg-blk);color:var(--c-blk)}
+.badge-type.research{background:var(--bg-res);color:var(--c-res)}
+.badge-author{background:var(--paper-2);color:var(--text-2);border:1px solid var(--line)}
+.badge-task{background:var(--paper-2);color:var(--text-2);border:1px solid var(--line);font-family:var(--mono);font-size:10.5px}
+.sync-ok{color:#059669;font-size:11.5px;font-weight:600;display:flex;align-items:center;gap:5px}
+.sync-no{color:var(--text-3);font-size:11.5px;font-weight:500}
+.sync-ok a{color:#059669;text-decoration:none}
+.sync-ok a:hover{text-decoration:underline}
 
 /* Entry actions */
-.e-acts{display:flex;gap:4px;flex-shrink:0}
-.ico-btn{background:none;border:0.5px solid var(--color-border-tertiary);border-radius:var(--radius-xs);padding:4px 8px;cursor:pointer;font-size:11px;font-family:var(--font);color:var(--color-text-tertiary);transition:all var(--dur) var(--ease);white-space:nowrap}
-.ico-btn:hover{border-color:var(--color-border-primary);color:var(--color-text-primary)}
-.ico-btn.gh-btn:hover{border-color:var(--accent);color:var(--accent)}
-.ico-btn.del:hover{border-color:#DC2626;color:#DC2626}
+.e-acts{display:flex;gap:5px;flex-shrink:0}
+.ico-btn{
+  background:#FFFFFF;border:1px solid var(--line-strong);
+  border-radius:var(--r-sm);padding:5px 10px;cursor:pointer;
+  font-size:11.5px;font-family:var(--font);font-weight:500;
+  color:var(--text-2);transition:all var(--dur) var(--ease);
+  white-space:nowrap;
+}
+.ico-btn:hover{border-color:var(--text-2);color:var(--text);transform:translateY(-1px)}
+.ico-btn.gh-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.ico-btn.del:hover{border-color:#EF4444;color:#EF4444;background:rgba(239,68,68,.06)}
+.ico-btn.docx-btn:hover{border-color:#10B981;color:#059669;background:rgba(16,185,129,.06)}
 
 /* Entry body */
-.ebody{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
-.e-field{display:flex;flex-direction:column;gap:3px}
-.e-lbl{font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--color-text-tertiary)}
-.e-val{font-size:13px;line-height:1.6;color:var(--color-text-secondary);white-space:pre-wrap}
-.e-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding-top:10px;border-top:0.5px solid var(--color-border-tertiary)}
-.e-metric{background:var(--color-background-secondary);border-radius:var(--radius-sm);padding:10px 12px}
-.e-metric .e-lbl{margin-bottom:4px}
-.e-metric .e-val{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--color-text-primary)}
-.tag-row{display:flex;gap:4px;flex-wrap:wrap;padding-top:10px;border-top:0.5px solid var(--color-border-tertiary)}
-.tag{display:inline-flex;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;background:var(--color-background-secondary);color:var(--color-text-tertiary);border:0.5px solid var(--color-border-tertiary)}
+.ebody{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.e-field{display:flex;flex-direction:column;gap:4px}
+.e-lbl{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3)}
+.e-val{font-size:13px;line-height:1.65;color:var(--text-2);white-space:pre-wrap}
+.e-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding-top:12px;border-top:1px solid var(--line)}
+.e-metric{background:var(--paper-2);border-radius:var(--r-md);padding:11px 13px}
+.e-metric .e-lbl{margin-bottom:5px}
+.e-metric .e-val{font-family:var(--mono);font-size:13.5px;font-weight:600;color:var(--text);letter-spacing:-.02em}
+.tag-row{display:flex;gap:5px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--line)}
+.tag{display:inline-flex;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:500;background:var(--paper-2);color:var(--text-2);border:1px solid var(--line);font-family:var(--mono)}
 
-/* ── EMPTY STATE ── */
-.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;border:0.5px dashed var(--color-border-tertiary);border-radius:var(--radius);gap:8px}
-.empty-icon{width:40px;height:40px;border-radius:10px;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;margin-bottom:4px}
-.empty-icon svg{width:20px;height:20px;color:var(--color-text-tertiary)}
-.empty h3{font-size:14px;font-weight:600;color:var(--color-text-primary)}
-.empty p{font-size:13px;color:var(--color-text-secondary);text-align:center}
+/* ────────── EMPTY STATE ────────── */
+.empty{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:56px 28px;
+  border:1.5px dashed var(--line-strong);
+  border-radius:var(--r-xl);gap:10px;
+  background:rgba(255,255,255,.5);
+}
+.empty-icon{
+  width:46px;height:46px;border-radius:12px;
+  background:var(--paper-2);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:6px;
+}
+.empty-icon svg{width:22px;height:22px;color:var(--text-3)}
+.empty h3{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-.015em}
+.empty p{font-size:13px;color:var(--text-2);text-align:center;max-width:320px}
 
-/* ── MODAL ── */
-.mo-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity var(--dur) var(--ease)}
+/* ────────── MODAL ────────── */
+.mo-overlay{
+  position:fixed;inset:0;
+  background:rgba(10,10,11,.55);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  z-index:100;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;
+  transition:opacity var(--dur) var(--ease);
+  padding:20px;
+}
 .mo-overlay.show{opacity:1;pointer-events:all}
-.mbox{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:14px;width:560px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;transform:scale(.97) translateY(8px);transition:transform var(--dur) var(--ease);overflow:hidden}
+.mbox{
+  background:#FFFFFF;
+  border:1px solid var(--line);
+  border-radius:18px;
+  width:600px;max-width:100%;max-height:88vh;
+  display:flex;flex-direction:column;
+  transform:scale(.96) translateY(12px);
+  transition:transform var(--dur-slow) var(--ease-out);
+  overflow:hidden;
+  box-shadow:0 24px 80px rgba(0,0,0,.25),0 8px 24px rgba(0,0,0,.12);
+}
 .mo-overlay.show .mbox{transform:scale(1) translateY(0)}
-.m-hdr{padding:16px 20px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between}
-.m-hdr h3{font-size:14px;font-weight:600;color:var(--color-text-primary)}
-.m-close{background:var(--color-background-secondary);border:none;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--color-text-secondary);transition:all var(--dur) var(--ease)}
-.m-close:hover{background:var(--color-background-tertiary);color:var(--color-text-primary)}
-.m-body{padding:20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:12px}
-.m-ftr{padding:14px 20px;border-top:0.5px solid var(--color-border-tertiary);display:flex;gap:8px;justify-content:flex-end}
-.ai-stat{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--color-text-secondary)}
-.spin{width:14px;height:14px;border:2px solid var(--color-border-tertiary);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0}
-@keyframes sp{to{transform:rotate(360deg)}}
-.rprev{font-size:12px;line-height:1.7;color:var(--color-text-secondary);white-space:pre-wrap;background:var(--color-background-secondary);padding:12px;border-radius:var(--radius-sm);max-height:40vh;overflow-y:auto;border:0.5px solid var(--color-border-tertiary)}
+.m-hdr{
+  padding:18px 22px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(180deg,#FFFFFF 0%,#FAFAFA 100%);
+}
+.m-hdr h3{font-size:16px;font-weight:600;color:var(--text);letter-spacing:-.015em}
+.m-close{background:none;border:none;cursor:pointer;color:var(--text-3);width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:7px;transition:all var(--dur) var(--ease)}
+.m-close:hover{background:var(--paper-2);color:var(--text)}
+.m-body{padding:22px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.m-ftr{padding:16px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;background:#FAFAFA}
 
-/* ── TOAST ── */
-.toast{position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:500;opacity:0;transform:translateY(8px) scale(.97);transition:all .25s var(--ease);pointer-events:none;z-index:200;max-width:280px;box-shadow:0 8px 24px rgba(0,0,0,.15)}
-.toast.show{opacity:1;transform:translateY(0) scale(1)}
+/* AI status indicator */
+.ai-stat{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 16px;background:var(--accent-soft);
+  border-radius:var(--r-md);font-size:12.5px;color:var(--accent);
+  font-weight:500;border:1px solid rgba(37,99,235,.18);
+}
+.spin{
+  width:14px;height:14px;border:2px solid rgba(37,99,235,.2);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-input[type=date]{color-scheme:light dark}
+/* Report preview */
+.rprev{
+  background:var(--paper-2);border:1px solid var(--line);
+  border-radius:var(--r-md);padding:14px 16px;
+  font-family:var(--mono);font-size:12px;line-height:1.65;
+  color:var(--text);white-space:pre-wrap;
+  max-height:280px;overflow-y:auto;
+}
+
+/* ────────── SMART CONFLICT MODAL (NEW) ────────── */
+.conflict-options{display:flex;flex-direction:column;gap:10px}
+.conflict-opt{
+  background:#FFFFFF;
+  border:1.5px solid var(--line);
+  border-radius:var(--r-lg);
+  padding:14px 16px;cursor:pointer;
+  transition:all var(--dur) var(--ease);
+  display:flex;gap:14px;align-items:flex-start;
+  text-align:left;width:100%;font-family:var(--font);
+}
+.conflict-opt:hover{border-color:var(--accent);background:var(--accent-soft);transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.1)}
+.conflict-opt.recommended{border-color:rgba(37,99,235,.3);background:linear-gradient(180deg,#FFFFFF 0%,var(--accent-soft) 100%)}
+.conflict-icon{
+  width:38px;height:38px;border-radius:10px;
+  background:var(--paper-2);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  color:var(--text-2);
+}
+.conflict-opt:hover .conflict-icon{background:#FFFFFF;color:var(--accent)}
+.conflict-opt.recommended .conflict-icon{background:var(--accent);color:#FFFFFF}
+.conflict-text{flex:1;display:flex;flex-direction:column;gap:3px}
+.conflict-text-hdr{display:flex;align-items:center;gap:8px}
+.conflict-title{font-size:13.5px;font-weight:600;color:var(--text);letter-spacing:-.005em}
+.conflict-pill{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 7px;border-radius:100px;background:var(--accent);color:#FFFFFF}
+.conflict-desc{font-size:12px;color:var(--text-2);line-height:1.5}
+
+.diff-summary{
+  background:var(--paper-2);border-radius:var(--r-md);
+  padding:12px 14px;font-size:12px;color:var(--text-2);
+  display:flex;gap:14px;font-family:var(--mono);
+}
+.diff-summary span{display:flex;align-items:center;gap:5px}
+.diff-add{color:#059669;font-weight:600}
+.diff-mod{color:#D97706;font-weight:600}
+.diff-keep{color:var(--text-3);font-weight:600}
+
+/* ────────── TOAST ────────── */
+.toast{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:#FFFFFF;
+  padding:11px 18px;border-radius:100px;
+  font-size:13px;font-weight:500;
+  opacity:0;pointer-events:none;
+  transition:opacity var(--dur) var(--ease),transform var(--dur-slow) var(--ease-out);
+  z-index:200;
+  box-shadow:0 12px 40px rgba(0,0,0,.3),0 4px 12px rgba(0,0,0,.15);
+  letter-spacing:-.005em;
+  max-width:90vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+input[type=date]{color-scheme:light}
+
+/* Scrollbar refinement */
+.main::-webkit-scrollbar,.sb::-webkit-scrollbar,.m-body::-webkit-scrollbar,.rprev::-webkit-scrollbar{width:10px;height:10px}
+.main::-webkit-scrollbar-thumb,.sb::-webkit-scrollbar-thumb,.m-body::-webkit-scrollbar-thumb,.rprev::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:10px;border:2px solid transparent;background-clip:padding-box}
+.main::-webkit-scrollbar-thumb:hover,.sb::-webkit-scrollbar-thumb:hover{background:var(--text-3);background-clip:padding-box;border:2px solid transparent}
+
+/* Responsive */
+@media (max-width:900px){
+  .sb{display:none}
+  .main{padding:18px 16px 32px}
+  .g4{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr}
+  .e-grid{grid-template-columns:1fr}
+}
 </style>
 
 <div class="app">
@@ -235,7 +651,7 @@ input[type=date]{color-scheme:light dark}
   </div>
   <div class="sb-sec">
     <div class="sb-lbl">Filter</div>
-    <button class="f-btn act" onclick="setFilter('all',this)"><span class="f-dot" style="background:var(--color-text-tertiary)"></span>All entries</button>
+    <button class="f-btn act" onclick="setFilter('all',this)"><span class="f-dot" style="background:var(--text-3)"></span>All entries</button>
     <button class="f-btn" onclick="setFilter('work',this)"><span class="f-dot" style="background:var(--c-work)"></span>Work done</button>
     <button class="f-btn" onclick="setFilter('ideation',this)"><span class="f-dot" style="background:var(--c-idea)"></span>Ideation</button>
     <button class="f-btn" onclick="setFilter('decision',this)"><span class="f-dot" style="background:var(--c-dec)"></span>Decision</button>
@@ -249,14 +665,14 @@ input[type=date]{color-scheme:light dark}
       Push all pending
     </button>
     <button class="a-btn" onclick="openRepo()">
-      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3.75 2h8.5c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 12.25 14h-8.5A1.75 1.75 0 0 1 2 12.25v-8.5C2 2.784 2.784 2 3.75 2zm0 1.5a.25.25 0 0 0-.25.25v8.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25h-8.5zm5 3.72a.75.75 0 0 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L3.97 9.78a.75.75 0 1 1 1.06-1.06l1.72 1.72 2.72-2.72a.75.75 0 0 1-.72.28z"/></svg>
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5v-9zm10.5-1V9h-8c-.356 0-.694.074-1 .208V2.5a1 1 0 0 1 1-1h8z"/></svg>
       Open repository
     </button>
   </div>
   <div class="sb-sec">
     <div class="sb-lbl">Generate</div>
     <button class="a-btn accent-btn" onclick="openPOC()">
-      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M11.93 8.5a4.002 4.002 0 0 1-7.86 0H.75a.75.75 0 0 1 0-1.5h3.32a4.002 4.002 0 0 1 7.86 0h3.32a.75.75 0 0 1 0 1.5zm-1.43-.75a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0z"/></svg>
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25V1.75zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5H3.75zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011z"/></svg>
       POC document
     </button>
   </div>
@@ -275,16 +691,16 @@ input[type=date]{color-scheme:light dark}
   <!-- GitHub Config -->
   <div class="cfg" id="cfg-panel">
     <div class="cfg-hdr">GitHub Connection</div>
-    <div class="cfg-sub">Each member gets their own folder: <code style="font-family:var(--mono);font-size:11px;background:var(--color-background-secondary);padding:2px 5px;border-radius:4px">journal/{name}/{task}.md</code> — new sessions AI-merge with existing task files.</div>
-    <div class="g2" style="margin-bottom:10px">
+    <div class="cfg-sub">Each member gets their own folder: <code>journal/{name}/{task}.md</code> — new sessions intelligently handle existing files (merge, replace, or version).</div>
+    <div class="g2" style="margin-bottom:14px">
       <div class="fg"><span class="fl">Personal Access Token</span><input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx"></div>
       <div class="fg"><span class="fl">Repository (owner/repo)</span><input type="text" id="gh-repo" placeholder="org/avionics-project"></div>
       <div class="fg"><span class="fl">Branch</span><input type="text" id="gh-branch" value="main"></div>
       <div class="fg"><span class="fl">Base folder</span><input type="text" id="gh-base" value="journal"></div>
     </div>
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <span id="cfg-status" style="font-size:12px;color:var(--color-text-secondary)"></span>
-      <div style="display:flex;gap:8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <span id="cfg-status" style="font-size:12.5px;color:var(--text-2)"></span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" onclick="toggleCfg()">Cancel</button>
         <button class="btn" onclick="testGH()">Test connection</button>
         <button class="btn btn-gh" onclick="saveGH()">Save & connect</button>
@@ -331,7 +747,7 @@ input[type=date]{color-scheme:light dark}
 
       <div class="fsec">
         <div class="fsec-lbl">Session detail</div>
-        <div class="fg"><span class="fl">Full summary — everything discussed, explored, built. No omissions.</span><textarea id="f-summary" style="min-height:80px" placeholder="Be exhaustive. Context, approach, what worked, what didn't, references..."></textarea></div>
+        <div class="fg"><span class="fl">Full summary — everything discussed, explored, built. No omissions.</span><textarea id="f-summary" style="min-height:90px" placeholder="Be exhaustive. Context, approach, what worked, what didn't, references..."></textarea></div>
       </div>
 
       <div class="fsec">
@@ -372,10 +788,10 @@ input[type=date]{color-scheme:light dark}
 
       <div class="paste-wrap">
         <div class="paste-lbl">
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M5.75 1a.75.75 0 0 0-.75.75v3c0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75v-3a.75.75 0 0 0-.75-.75h-4.5zm.75 3V2.5h3V4h-3zm-2.874-.467a.75.75 0 0 0-.752-1.298A1.75 1.75 0 0 0 2 4.75v7.5c0 .966.784 1.75 1.75 1.75h8.5A1.75 1.75 0 0 0 14 12.25v-7.5a1.75 1.75 0 0 0-.874-1.515.75.75 0 1 0-.752 1.298.25.25 0 0 1 .126.217v7.5a.25.25 0 0 1-.25.25h-8.5a.25.25 0 0 1-.25-.25v-7.5a.25.25 0 0 1 .126-.217z"/></svg>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M5.75 1a.75.75 0 0 0-.75.75v3c0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75v-3a.75.75 0 0 0-.75-.75h-4.5zm.75 3V2.5h3V4h-3zm-2.874-.467a.75.75 0 0 0-.752-1.298A1.75 1.75 0 0 0 2 4.75v7.5c0 .966.784 1.75 1.75 1.75h8.5A1.75 1.75 0 0 0 14 12.25v-7.5a1.75 1.75 0 0 0-.874-1.515.75.75 0 1 0-.752 1.298.25.25 0 0 1 .126.217v7.5a.25.25 0 0 1-.25.25h-8.5a.25.25 0 0 1-.25-.25v-7.5a.25.25 0 0 1 .126-.217z"/></svg>
           Paste Claude's full log here — auto-parses all fields
         </div>
-        <textarea id="f-paste" placeholder="Paste Claude's output → Parse fills all fields above automatically" style="min-height:48px"></textarea>
+        <textarea id="f-paste" placeholder="Paste Claude's output → Parse fills all fields above automatically" style="min-height:52px"></textarea>
       </div>
 
       <div class="btn-row">
@@ -398,7 +814,7 @@ input[type=date]{color-scheme:light dark}
     <input id="srch" placeholder="Search by title, author, task, cost, vendor..." oninput="render()">
   </div>
 
-  <div id="elist" style="display:flex;flex-direction:column;gap:10px"></div>
+  <div id="elist" style="display:flex;flex-direction:column;gap:12px"></div>
 
 </main>
 </div>
@@ -410,7 +826,7 @@ input[type=date]{color-scheme:light dark}
     <div class="m-hdr">
       <h3>Generate POC document</h3>
       <button class="m-close" onclick="closePOC()">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z"/></svg>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z"/></svg>
       </button>
     </div>
     <div class="m-body">
@@ -426,17 +842,75 @@ input[type=date]{color-scheme:light dark}
           </select>
         </div>
       </div>
-      <div class="fg"><span class="fl">Additional instructions for Claude</span><textarea id="poc-extra" style="min-height:60px" placeholder="What to highlight, what to ask Claude to fill in, assumptions to make..."></textarea></div>
+      <div class="fg"><span class="fl">Additional instructions for Claude</span><textarea id="poc-extra" style="min-height:64px" placeholder="What to highlight, what to ask Claude to fill in, assumptions to make..."></textarea></div>
       <div id="poc-status" style="display:none" class="ai-stat"><div class="spin"></div><span id="poc-st-txt">Generating report…</span></div>
       <div id="poc-preview" style="display:none">
-        <div class="fl" style="margin-bottom:6px">Preview</div>
+        <div class="fl" style="margin-bottom:7px">Preview</div>
         <div class="rprev" id="poc-content"></div>
       </div>
     </div>
     <div class="m-ftr">
       <button class="btn" onclick="closePOC()">Cancel</button>
+      <button class="btn" id="btn-docx-poc" style="display:none" onclick="downloadPOCDocx()">Download .docx</button>
       <button class="btn btn-gh" id="btn-push-poc" style="display:none" onclick="pushPOCtoGH()">Push to GitHub</button>
       <button class="btn btn-p" id="btn-gen-poc" onclick="genPOC()">Generate</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─────── SMART CONFLICT MODAL (NEW) ─────── -->
+<div class="mo-overlay" id="conflict-mo">
+  <div class="mbox">
+    <div class="m-hdr">
+      <h3>File already exists in repo</h3>
+      <button class="m-close" onclick="closeConflict()">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z"/></svg>
+      </button>
+    </div>
+    <div class="m-body">
+      <div style="font-size:13px;color:var(--text-2);line-height:1.55">
+        <strong style="color:var(--text);font-weight:600" id="conflict-path">file.md</strong> already exists. Choose how to handle it — your data stays safe.
+      </div>
+      <div class="diff-summary" id="conflict-diff">
+        <span><span class="diff-add">●</span> <span id="diff-new">— new</span></span>
+        <span><span class="diff-mod">●</span> <span id="diff-mod">— updated</span></span>
+        <span><span class="diff-keep">●</span> <span id="diff-keep">— unchanged</span></span>
+      </div>
+      <div class="conflict-options">
+        <button class="conflict-opt recommended" onclick="resolveConflict('merge')">
+          <div class="conflict-icon">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M5 3.254V3.25v.005a.75.75 0 1 1 0-.005zM5 6a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5A.75.75 0 0 1 5 6zM2.5 3.25a2.5 2.5 0 1 1 3.336 2.36 2.502 2.502 0 0 1 1.196 1.168A.75.75 0 0 0 7.708 7.5h1.166c.83 0 1.504-.673 1.504-1.503v-.594A2.5 2.5 0 1 1 12 5.408V6c0 1.66-1.348 3-3.008 3H7.708a.25.25 0 0 0-.225.139l-.235.471A2.5 2.5 0 1 1 5 12.5v-3a2.5 2.5 0 0 1-2.5-2.5v-3.75zM5 11.25a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm6-7a1 1 0 1 0-2 0 1 1 0 0 0 2 0z"/></svg>
+          </div>
+          <div class="conflict-text">
+            <div class="conflict-text-hdr">
+              <div class="conflict-title">Merge & update</div>
+              <div class="conflict-pill">Recommended</div>
+            </div>
+            <div class="conflict-desc">AI merges new content into existing — keeps everything, replaces only what changed. Single committed update.</div>
+          </div>
+        </button>
+        <button class="conflict-opt" onclick="resolveConflict('replace')">
+          <div class="conflict-icon">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834zM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5z"/></svg>
+          </div>
+          <div class="conflict-text">
+            <div class="conflict-text-hdr"><div class="conflict-title">Replace completely</div></div>
+            <div class="conflict-desc">Wipe the existing file and upload the new one. Old content is lost (still in Git history).</div>
+          </div>
+        </button>
+        <button class="conflict-opt" onclick="resolveConflict('version')">
+          <div class="conflict-icon">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0zm7-3.25v2.992l2.028.812a.75.75 0 0 1-.557 1.392l-2.5-1A.751.751 0 0 1 7 8.25v-3.5a.75.75 0 0 1 1.5 0z"/></svg>
+          </div>
+          <div class="conflict-text">
+            <div class="conflict-text-hdr"><div class="conflict-title">Create new version</div></div>
+            <div class="conflict-desc">Keep existing file. Upload new one with timestamp suffix (<code style="font-family:var(--mono);font-size:11px">-v-YYYYMMDDHHmm.md</code>).</div>
+          </div>
+        </button>
+      </div>
+    </div>
+    <div class="m-ftr">
+      <button class="btn" onclick="closeConflict()">Cancel</button>
     </div>
   </div>
 </div>
@@ -445,9 +919,13 @@ input[type=date]{color-scheme:light dark}
 
 <script>
 let entries=[],ghCfg=null,currentFilter='all',pocText='';
+let conflictCtx=null; // pending conflict resolution context
 const today=new Date().toISOString().split('T')[0];
 document.getElementById('f-date').value=today;
 
+/* ════════════════════════════════════════════════════════════
+   STATE / PERSISTENCE
+   ════════════════════════════════════════════════════════════ */
 async function load(){
   try{
     const[e,c,a]=await Promise.all([
@@ -456,12 +934,17 @@ async function load(){
       window.storage.get('ghj2-author').catch(()=>null),
     ]);
     entries=e?JSON.parse(e.value):[];
-    if(c){ghCfg=JSON.parse(c.value);updatePill(true);loadCfgFields();}
+    if(c){ghCfg=JSON.parse(c.value);updatePill(true);loadCfgFields();setConnectedState(true);}
     if(a)document.getElementById('f-author').value=a.value;
   }catch{entries=[];}
   render();stats();
 }
 async function save(){try{await window.storage.set('ghj2-entries',JSON.stringify(entries));}catch{}}
+
+/* Toggle premium "alive" state */
+function setConnectedState(on){
+  document.documentElement.classList.toggle('connected',!!on);
+}
 
 function toggleCfg(){document.getElementById('cfg-panel').classList.toggle('open');document.getElementById('cfg-status').textContent='';}
 function loadCfgFields(){if(!ghCfg)return;document.getElementById('gh-repo').value=ghCfg.repo||'';document.getElementById('gh-branch').value=ghCfg.branch||'main';document.getElementById('gh-base').value=ghCfg.base||'journal';}
@@ -469,23 +952,24 @@ function loadCfgFields(){if(!ghCfg)return;document.getElementById('gh-repo').val
 function saveGH(){
   const token=document.getElementById('gh-token').value.trim();
   const repo=document.getElementById('gh-repo').value.trim();
-  if(!token||!repo){showToast('Token and repo required','#D97706','#000');return;}
+  if(!token||!repo){showToast('Token and repo required','#D97706','#fff');return;}
   ghCfg={token,repo,branch:document.getElementById('gh-branch').value.trim()||'main',base:document.getElementById('gh-base').value.trim()||'journal'};
   window.storage.set('ghj2-config',JSON.stringify(ghCfg));
-  updatePill(true);toggleCfg();showToast('GitHub connected','#28A745','#fff');
+  updatePill(true);setConnectedState(true);toggleCfg();
+  showToast('GitHub connected — system live','#10B981','#fff');
 }
 
 async function testGH(){
   const token=document.getElementById('gh-token').value.trim();
   const repo=document.getElementById('gh-repo').value.trim();
   const el=document.getElementById('cfg-status');
-  el.textContent='Testing…';el.style.color='var(--color-text-secondary)';
+  el.textContent='Testing…';el.style.color='var(--text-2)';
   try{
     const r=await fetch(`https://api.github.com/repos/${repo}`,{headers:ghHeaders(token)});
     const d=await r.json();
-    if(r.ok){el.textContent=`Found: ${d.full_name}`;el.style.color='#28A745';}
-    else{el.textContent=d.message;el.style.color='#DC2626';}
-  }catch{el.textContent='Network error';el.style.color='#DC2626';}
+    if(r.ok){el.textContent=`✓ Found: ${d.full_name}`;el.style.color='#059669';}
+    else{el.textContent=d.message;el.style.color='#EF4444';}
+  }catch{el.textContent='Network error';el.style.color='#EF4444';}
 }
 
 function updatePill(on,busy=false){
@@ -494,17 +978,20 @@ function updatePill(on,busy=false){
   document.getElementById('gh-pill-txt').textContent=busy?'Syncing…':on?(ghCfg?.repo||'Connected'):'Connect GitHub';
 }
 
-function openRepo(){if(ghCfg)window.open(`https://github.com/${ghCfg.repo}`,'_blank');}
+function openRepo(){if(ghCfg)window.open(`https://github.com/${ghCfg.repo}`,'_blank');else showToast('Connect GitHub first','#D97706','#fff');}
 
+/* ════════════════════════════════════════════════════════════
+   GITHUB API
+   ════════════════════════════════════════════════════════════ */
 function ghHeaders(t){return{'Authorization':`token ${t||ghCfg?.token}`,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'};}
 
 async function ghGet(path){
-  const r=await fetch(`https://api.github.com/repos/${ghCfg.repo}/contents/${path}?ref=${ghCfg.branch}`,{headers:ghHeaders()});
+  const r=await fetch(`https://api.github.com/repos/${ghCfg.repo}/contents/${encodeURI(path)}?ref=${ghCfg.branch}`,{headers:ghHeaders()});
   if(r.status===404)return null;if(!r.ok)throw new Error(`GH GET ${r.status}`);return r.json();
 }
 
 async function ghPut(path,content,sha,msg){
-  const r=await fetch(`https://api.github.com/repos/${ghCfg.repo}/contents/${path}`,{
+  const r=await fetch(`https://api.github.com/repos/${ghCfg.repo}/contents/${encodeURI(path)}`,{
     method:'PUT',headers:ghHeaders(),
     body:JSON.stringify({message:msg,content:btoa(unescape(encodeURIComponent(content))),branch:ghCfg.branch,...(sha?{sha}:{})})
   });
@@ -512,9 +999,73 @@ async function ghPut(path,content,sha,msg){
   return r.json();
 }
 
+async function ghDelete(path,sha,msg){
+  const r=await fetch(`https://api.github.com/repos/${ghCfg.repo}/contents/${encodeURI(path)}`,{
+    method:'DELETE',headers:ghHeaders(),
+    body:JSON.stringify({message:msg,sha,branch:ghCfg.branch})
+  });
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.message||`GH DELETE ${r.status}`);}
+  return r.json();
+}
+
+/* ════════════════════════════════════════════════════════════
+   PATH / DOC HELPERS
+   ════════════════════════════════════════════════════════════ */
 function taskSlug(t){return t.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');}
 function memberPath(a,t){return `${ghCfg.base}/${a.toLowerCase().replace(/\s+/g,'-')}/${taskSlug(t)}.md`;}
 
+/* ────────── DETERMINISTIC DIFF ──────────
+   Practical, line-level diff — no AI guesswork required for the
+   classification step. AI only intervenes for actual content merging. */
+function classifyDiff(oldText,newText){
+  if(!oldText)return{kind:'new',add:0,mod:0,keep:0};
+  const oldNorm=oldText.replace(/\r\n/g,'\n').trim();
+  const newNorm=newText.replace(/\r\n/g,'\n').trim();
+  if(oldNorm===newNorm)return{kind:'identical',add:0,mod:0,keep:oldNorm.split('\n').length};
+  const oldLines=new Set(oldNorm.split('\n').map(l=>l.trim()).filter(Boolean));
+  const newLines=newNorm.split('\n').map(l=>l.trim()).filter(Boolean);
+  let add=0,keep=0;
+  for(const l of newLines){if(oldLines.has(l))keep++;else add++;}
+  const oldArr=oldNorm.split('\n').map(l=>l.trim()).filter(Boolean);
+  const newSet=new Set(newLines);
+  let removed=0;for(const l of oldArr)if(!newSet.has(l))removed++;
+  const ratio=add/(oldArr.length||1);
+  let kind;if(ratio>0.6)kind='major';else if(add>0||removed>0)kind='partial';else kind='identical';
+  return{kind,add,mod:Math.min(removed,add),keep};
+}
+
+/* ────────── CLAUDE: STRUCTURING ONLY ──────────
+   Strict role: structure raw paste into JSON the parser already understands.
+   Used only when normal field-key parsing fails AND user explicitly asks.
+   No styling, no DOCX, no UI generation — JSON only. */
+async function aiStructure(rawText){
+  const prompt=`Structure this raw aerospace project session log into JSON. Output ONLY valid JSON, no preamble, no markdown fence.
+
+Schema (use empty string for missing fields):
+{
+  "title":"","task":"","summary":"",
+  "budget":"","cost":"","spent":"","costdetail":"",
+  "materials":"","vendors":"","tech":"",
+  "decisions":"","blockers":"","next":"","deps":"",
+  "tags":["..."]
+}
+
+RAW INPUT:
+${rawText}
+
+JSON:`;
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+  });
+  const d=await r.json();
+  const txt=(d.content?.find(b=>b.type==='text')?.text||'').replace(/```json|```/g,'').trim();
+  return JSON.parse(txt);
+}
+
+/* ────────── CLAUDE: MERGE ──────────
+   Used only when user picks "Merge & update" on conflict.
+   AI returns Markdown only. */
 async function aiMerge(oldDoc,e){
   const prompt=`You are a technical documentation expert for an aerospace/avionics project.
 
@@ -524,7 +1075,7 @@ Rules:
 1. Keep ALL existing data. Update only where new data supersedes (show old vs new with dates where values changed).
 2. Add new data that doesn't exist yet.
 3. Zero omissions — all numbers, vendor names, specs, costs must be preserved.
-4. Output clean Markdown with clear sections.
+4. Output clean Markdown with clear sections. No preamble.
 
 EXISTING DOCUMENT:
 ${oldDoc}
@@ -543,7 +1094,7 @@ Next steps: ${e.next||'—'}
 Dependencies: ${e.deps||'—'}
 Tags: ${e.tags.join(', ')||'—'}
 
-Output ONLY the merged Markdown. No preamble.`;
+Output ONLY the merged Markdown.`;
   const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
   const d=await r.json();
   return d.content?.find(b=>b.type==='text')?.text||'';
@@ -551,64 +1102,307 @@ Output ONLY the merged Markdown. No preamble.`;
 
 function buildDoc(e){
   const tl={work:'Work Done',ideation:'Ideation',decision:'Decision',blocker:'Blocker',research:'Research'};
-  return `# ${e.task}\n\n**Author:** ${e.author} | **Updated:** ${e.date} | **Type:** ${tl[e.type]||e.type}\n**Tags:** ${e.tags.join(', ')||'—'}\n\n---\n\n## Session: ${e.date} — ${e.title}\n\n### Summary\n${e.summary||'—'}\n\n## Financial\n\n| Field | Value |\n|---|---|\n| Budget | ${e.budget||'—'} |\n| Cost (this session) | ${e.cost||'—'} |\n| Total spent | ${e.spent||'—'} |\n\n### Cost Breakdown\n${e.costdetail||'—'}\n\n## Materials & Components\n${e.materials||'—'}\n\n## Vendors & Dealers\n${e.vendors||'—'}\n\n## Technical\n${e.tech||'—'}\n\n## Decisions\n${e.decisions||'—'}\n\n## Blockers\n${e.blockers||'—'}\n\n## Next Steps\n${e.next||'—'}\n\n## Dependencies\n${e.deps||'—'}\n`;
+  return `# ${e.task}
+
+**Author:** ${e.author} | **Updated:** ${e.date} | **Type:** ${tl[e.type]||e.type}
+**Tags:** ${e.tags.join(', ')||'—'}
+
+---
+
+## Session: ${e.date} — ${e.title}
+
+### Summary
+${e.summary||'—'}
+
+## Financial
+
+| Field | Value |
+|---|---|
+| Budget | ${e.budget||'—'} |
+| Cost (this session) | ${e.cost||'—'} |
+| Total spent | ${e.spent||'—'} |
+
+### Cost Breakdown
+${e.costdetail||'—'}
+
+## Materials & Components
+${e.materials||'—'}
+
+## Vendors & Dealers
+${e.vendors||'—'}
+
+## Technical
+${e.tech||'—'}
+
+## Decisions
+${e.decisions||'—'}
+
+## Blockers
+${e.blockers||'—'}
+
+## Next Steps
+${e.next||'—'}
+
+## Dependencies
+${e.deps||'—'}
+`;
 }
 
+/* ════════════════════════════════════════════════════════════
+   PUSH FLOW WITH CONFLICT HANDLING
+   ════════════════════════════════════════════════════════════ */
 async function pushEntry(entry){
   if(!ghCfg)throw new Error('Not connected');
   updatePill(true,true);
   const path=memberPath(entry.author,entry.task);
   const ex=await ghGet(path);
-  let content,msg;
   if(ex){
-    const old=decodeURIComponent(escape(atob(ex.content.replace(/\n/g,''))));
-    showToast('AI merging with existing file…','#7C3AED','#fff');
-    const merged=await aiMerge(old,entry);
-    content=merged||buildDoc(entry);
-    msg=`journal(${entry.author}): update ${entry.task} [${entry.date}]`;
-    await ghPut(path,content,ex.sha,msg);
+    // FILE EXISTS → present user with the three options.
+    const oldRaw=decodeURIComponent(escape(atob(ex.content.replace(/\n/g,''))));
+    const newRaw=buildDoc(entry);
+    const diff=classifyDiff(oldRaw,newRaw);
+    updatePill(true,false);
+    return new Promise((resolve,reject)=>{
+      conflictCtx={entry,path,existing:ex,oldRaw,newRaw,diff,resolve,reject};
+      openConflictModal(path,diff);
+    });
   }else{
-    content=buildDoc(entry);
-    msg=`journal(${entry.author}): create ${entry.task} [${entry.date}]`;
+    const content=buildDoc(entry);
+    const msg=`journal(${entry.author}): create ${entry.task} [${entry.date}]`;
     await ghPut(path,content,null,msg);
+    updatePill(true,false);
+    return `https://github.com/${ghCfg.repo}/blob/${ghCfg.branch}/${path}`;
   }
-  updatePill(true,false);
-  return `https://github.com/${ghCfg.repo}/blob/${ghCfg.branch}/${path}`;
 }
 
+function openConflictModal(path,diff){
+  document.getElementById('conflict-path').textContent=path;
+  document.getElementById('diff-new').textContent=`${diff.add} new line${diff.add===1?'':'s'}`;
+  document.getElementById('diff-mod').textContent=`${diff.mod} updated`;
+  document.getElementById('diff-keep').textContent=`${diff.keep} unchanged`;
+  document.getElementById('conflict-mo').classList.add('show');
+}
+function closeConflict(){
+  document.getElementById('conflict-mo').classList.remove('show');
+  if(conflictCtx){conflictCtx.reject(new Error('Cancelled by user'));conflictCtx=null;}
+}
+
+async function resolveConflict(action){
+  if(!conflictCtx)return;
+  const ctx=conflictCtx;conflictCtx=null;
+  document.getElementById('conflict-mo').classList.remove('show');
+  updatePill(true,true);
+  try{
+    let url;
+    if(action==='merge'){
+      showToast('AI merging with existing file…','#8B5CF6','#fff');
+      let merged='';
+      try{merged=await aiMerge(ctx.oldRaw,ctx.entry);}catch{merged='';}
+      const content=merged||ctx.newRaw; // graceful fallback if API fails
+      const msg=`journal(${ctx.entry.author}): merge update ${ctx.entry.task} [${ctx.entry.date}]`;
+      await ghPut(ctx.path,content,ctx.existing.sha,msg);
+      url=`https://github.com/${ghCfg.repo}/blob/${ghCfg.branch}/${ctx.path}`;
+    }else if(action==='replace'){
+      // Delete then put — keeps history clean and explicit
+      const delMsg=`journal(${ctx.entry.author}): replace — remove old ${ctx.entry.task}`;
+      await ghDelete(ctx.path,ctx.existing.sha,delMsg);
+      const putMsg=`journal(${ctx.entry.author}): replace — new ${ctx.entry.task} [${ctx.entry.date}]`;
+      await ghPut(ctx.path,ctx.newRaw,null,putMsg);
+      url=`https://github.com/${ghCfg.repo}/blob/${ghCfg.branch}/${ctx.path}`;
+    }else if(action==='version'){
+      const ts=new Date().toISOString().replace(/[-:T]/g,'').slice(0,12); // YYYYMMDDHHmm
+      const versionedPath=ctx.path.replace(/\.md$/,`-v-${ts}.md`);
+      const msg=`journal(${ctx.entry.author}): version ${ctx.entry.task} as v-${ts}`;
+      await ghPut(versionedPath,ctx.newRaw,null,msg);
+      url=`https://github.com/${ghCfg.repo}/blob/${ghCfg.branch}/${versionedPath}`;
+    }
+    updatePill(true,false);
+    // Mark synced and resolve
+    const e=ctx.entry;
+    const idx=entries.findIndex(x=>x.id===e.id);
+    if(idx>-1){entries[idx].synced=true;entries[idx].ghUrl=url;}
+    await save();render();stats();cstrip(e,url);
+    showToast(action==='merge'?'Merged & pushed':action==='replace'?'Replaced & pushed':'New version pushed','#10B981','#fff');
+    if(ctx.resolve)ctx.resolve(url);
+  }catch(err){
+    updatePill(true,false);
+    showToast('Push failed: '+err.message,'#EF4444','#fff');
+    if(ctx.reject)ctx.reject(err);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   ENTRIES
+   ════════════════════════════════════════════════════════════ */
 async function addEntry(push){
   const author=document.getElementById('f-author').value.trim();
   const task=document.getElementById('f-task').value.trim();
   const title=document.getElementById('f-title').value.trim();
   const summary=document.getElementById('f-summary').value.trim();
-  if(!author||!task||!title||!summary){showToast('Name, task, title & summary required','#D97706','#000');return;}
+  if(!author||!task||!title||!summary){showToast('Name, task, title & summary required','#D97706','#fff');return;}
   try{await window.storage.set('ghj2-author',author);}catch{}
   const entry={id:Date.now(),date:document.getElementById('f-date').value||today,author,task,type:document.getElementById('f-type').value,title,summary,budget:document.getElementById('f-budget').value.trim(),cost:document.getElementById('f-cost').value.trim(),spent:document.getElementById('f-spent').value.trim(),costdetail:document.getElementById('f-costdetail').value.trim(),materials:document.getElementById('f-materials').value.trim(),vendors:document.getElementById('f-vendors').value.trim(),tech:document.getElementById('f-tech').value.trim(),decisions:document.getElementById('f-decisions').value.trim(),blockers:document.getElementById('f-blockers').value.trim(),next:document.getElementById('f-next').value.trim(),deps:document.getElementById('f-deps').value.trim(),tags:document.getElementById('f-tags').value.split(',').map(t=>t.trim()).filter(Boolean),synced:false,ghUrl:null};
   entries.unshift(entry);
+  await save();render();stats();
   if(push){
-    if(!ghCfg){showToast('Connect GitHub first','#D97706','#000');entries.shift();return;}
-    try{const url=await pushEntry(entry);entries[0].synced=true;entries[0].ghUrl=url;cstrip(entry,url);showToast('Pushed to GitHub','#28A745','#fff');}
-    catch(err){updatePill(true,false);showToast('Push failed: '+err.message,'#DC2626','#fff');}
-  }else{showToast('Saved locally','#0071E3','#fff');}
-  await save();clearForm();render();stats();
+    if(!ghCfg){showToast('Connect GitHub first','#D97706','#fff');return;}
+    try{
+      const url=await pushEntry(entry);
+      // pushEntry handles synced/ghUrl assignment when conflict path is taken.
+      // For first-time creates we set them here:
+      if(url){
+        const idx=entries.findIndex(x=>x.id===entry.id);
+        if(idx>-1&&!entries[idx].synced){entries[idx].synced=true;entries[idx].ghUrl=url;await save();render();stats();cstrip(entry,url);showToast('Pushed to GitHub','#10B981','#fff');}
+      }
+    }catch(err){
+      if(err.message!=='Cancelled by user'){updatePill(true,false);showToast('Push failed: '+err.message,'#EF4444','#fff');}
+    }
+  }else{showToast('Saved locally','#2563EB','#fff');}
+  clearForm();
 }
 
 async function syncEntry(id){
-  if(!ghCfg){showToast('Connect GitHub first','#D97706','#000');return;}
+  if(!ghCfg){showToast('Connect GitHub first','#D97706','#fff');return;}
   const e=entries.find(x=>x.id===id);if(!e)return;
-  try{const url=await pushEntry(e);e.synced=true;e.ghUrl=url;await save();render();stats();cstrip(e,url);showToast('Synced to GitHub','#28A745','#fff');}
-  catch(err){updatePill(true,false);showToast('Sync failed: '+err.message,'#DC2626','#fff');}
+  try{
+    const url=await pushEntry(e);
+    if(url){
+      e.synced=true;e.ghUrl=url;await save();render();stats();cstrip(e,url);
+      showToast('Synced to GitHub','#10B981','#fff');
+    }
+  }catch(err){
+    if(err.message!=='Cancelled by user'){updatePill(true,false);showToast('Sync failed: '+err.message,'#EF4444','#fff');}
+  }
 }
 
 async function pushAllPending(){
-  if(!ghCfg){showToast('Connect GitHub first','#D97706','#000');return;}
+  if(!ghCfg){showToast('Connect GitHub first','#D97706','#fff');return;}
   const pending=entries.filter(e=>!e.synced);
-  if(!pending.length){showToast('All entries synced','#28A745','#fff');return;}
-  for(const e of pending){try{const url=await pushEntry(e);e.synced=true;e.ghUrl=url;}catch{}}
-  await save();render();stats();showToast(`${pending.length} entries pushed`,'#28A745','#fff');
+  if(!pending.length){showToast('All entries synced','#10B981','#fff');return;}
+  let ok=0,skipped=0;
+  for(const e of pending){
+    try{const url=await pushEntry(e);if(url){e.synced=true;e.ghUrl=url;ok++;}}
+    catch(err){if(err.message==='Cancelled by user')skipped++;}
+  }
+  await save();render();stats();
+  showToast(`${ok} pushed${skipped?` · ${skipped} skipped`:''}`,ok?'#10B981':'#D97706','#fff');
 }
 
-function openPOC(){if(!entries.length){showToast('Add entries first','#D97706','#000');return;}pocText='';document.getElementById('poc-preview').style.display='none';document.getElementById('poc-status').style.display='none';document.getElementById('btn-push-poc').style.display='none';document.getElementById('btn-gen-poc').style.display='';document.getElementById('poc-mo').classList.add('show');}
+/* ════════════════════════════════════════════════════════════
+   DOCX GENERATION (entry-level + POC-level)
+   Uses docx@8 (already loaded). Markdown → simple paragraph mapping.
+   ════════════════════════════════════════════════════════════ */
+function mdToDocx(md,titleStr){
+  const{Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,WidthType,BorderStyle}=window.docx;
+  const lines=md.split('\n');
+  const children=[];
+  let i=0;
+  // Title
+  if(titleStr)children.push(new Paragraph({text:titleStr,heading:HeadingLevel.TITLE,spacing:{after:200}}));
+
+  while(i<lines.length){
+    const line=lines[i];
+    const trimmed=line.trim();
+    if(!trimmed){i++;children.push(new Paragraph({text:''}));continue;}
+
+    // Headings
+    if(/^######\s/.test(trimmed)){children.push(new Paragraph({text:trimmed.slice(7),heading:HeadingLevel.HEADING_6}));i++;continue;}
+    if(/^#####\s/.test(trimmed)){children.push(new Paragraph({text:trimmed.slice(6),heading:HeadingLevel.HEADING_5}));i++;continue;}
+    if(/^####\s/.test(trimmed)){children.push(new Paragraph({text:trimmed.slice(5),heading:HeadingLevel.HEADING_4}));i++;continue;}
+    if(/^###\s/.test(trimmed)){children.push(new Paragraph({text:trimmed.slice(4),heading:HeadingLevel.HEADING_3}));i++;continue;}
+    if(/^##\s/.test(trimmed)){children.push(new Paragraph({text:trimmed.slice(3),heading:HeadingLevel.HEADING_2}));i++;continue;}
+    if(/^#\s/.test(trimmed)){children.push(new Paragraph({text:trimmed.slice(2),heading:HeadingLevel.HEADING_1}));i++;continue;}
+
+    // Markdown table — collect contiguous |...| rows
+    if(/^\|.*\|$/.test(trimmed)){
+      const tbl=[];
+      while(i<lines.length&&/^\|.*\|$/.test(lines[i].trim())){
+        const cells=lines[i].trim().slice(1,-1).split('|').map(c=>c.trim());
+        if(!cells.every(c=>/^:?-+:?$/.test(c)))tbl.push(cells); // skip separator row
+        i++;
+      }
+      if(tbl.length){
+        const rows=tbl.map((r,rIdx)=>new TableRow({
+          children:r.map(c=>new TableCell({
+            children:[new Paragraph({children:[new TextRun({text:c,bold:rIdx===0})]})],
+            width:{size:Math.floor(9000/r.length),type:WidthType.DXA}
+          }))
+        }));
+        children.push(new Table({rows,width:{size:9000,type:WidthType.DXA}}));
+        children.push(new Paragraph({text:''}));
+      }
+      continue;
+    }
+
+    // Bullet list
+    if(/^[-*]\s/.test(trimmed)){
+      children.push(new Paragraph({text:trimmed.slice(2),bullet:{level:0}}));
+      i++;continue;
+    }
+
+    // Bold inline rendering — minimal
+    const runs=[];
+    const parts=trimmed.split(/(\*\*[^*]+\*\*)/g);
+    for(const p of parts){
+      if(/^\*\*[^*]+\*\*$/.test(p))runs.push(new TextRun({text:p.slice(2,-2),bold:true}));
+      else if(p)runs.push(new TextRun({text:p}));
+    }
+    children.push(new Paragraph({children:runs.length?runs:[new TextRun({text:trimmed})]}));
+    i++;
+  }
+  return new Document({
+    creator:'Project Journal',
+    title:titleStr||'Project Journal',
+    styles:{
+      default:{
+        document:{run:{font:'Calibri',size:22}},
+      }
+    },
+    sections:[{children}]
+  });
+}
+
+async function downloadDocx(md,filename,titleStr){
+  const{Packer}=window.docx;
+  const doc=mdToDocx(md,titleStr);
+  const blob=await Packer.toBlob(doc);
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),500);
+}
+
+async function downloadEntryDocx(id){
+  const e=entries.find(x=>x.id===id);if(!e)return;
+  const md=buildDoc(e);
+  const fn=`${e.author.toLowerCase().replace(/\s+/g,'-')}-${taskSlug(e.task)}-${e.date}.docx`;
+  try{await downloadDocx(md,fn,`${e.task} — ${e.title}`);showToast('Downloaded .docx','#10B981','#fff');}
+  catch(err){showToast('DOCX failed: '+err.message,'#EF4444','#fff');}
+}
+
+async function downloadPOCDocx(){
+  if(!pocText)return;
+  const name=document.getElementById('poc-name').value.trim()||'project';
+  const type=document.getElementById('poc-type').value;
+  const fn=`${today}-${type}-${name.toLowerCase().replace(/\s+/g,'-')}.docx`;
+  try{await downloadDocx(pocText,fn,name);showToast('Downloaded .docx','#10B981','#fff');}
+  catch(err){showToast('DOCX failed: '+err.message,'#EF4444','#fff');}
+}
+
+/* ════════════════════════════════════════════════════════════
+   POC DOC GENERATION
+   ════════════════════════════════════════════════════════════ */
+function openPOC(){
+  if(!entries.length){showToast('Add entries first','#D97706','#fff');return;}
+  pocText='';
+  document.getElementById('poc-preview').style.display='none';
+  document.getElementById('poc-status').style.display='none';
+  document.getElementById('btn-push-poc').style.display='none';
+  document.getElementById('btn-docx-poc').style.display='none';
+  document.getElementById('btn-gen-poc').style.display='';
+  document.getElementById('poc-mo').classList.add('show');
+}
 function closePOC(){document.getElementById('poc-mo').classList.remove('show');}
 
 async function genPOC(){
@@ -616,15 +1410,41 @@ async function genPOC(){
   const type=document.getElementById('poc-type').value;
   const extra=document.getElementById('poc-extra').value.trim();
   const typeMap={poc:'Full Proof of Concept document',status:'Project Status Report',cost:'Cost & Budget Summary',vendor:'Vendor & Materials Report',tech:'Technical Architecture Document'};
-  const data=entries.map(e=>`DATE: ${e.date} | AUTHOR: ${e.author} | TASK: ${e.task} | TYPE: ${e.type}\nTitle: ${e.title}\nSummary: ${e.summary}\nBudget: ${e.budget||'—'} | Cost: ${e.cost||'—'} | Spent: ${e.spent||'—'}\nCost detail: ${e.costdetail||'—'}\nMaterials: ${e.materials||'—'}\nVendors: ${e.vendors||'—'}\nTech: ${e.tech||'—'}\nDecisions: ${e.decisions||'—'}\nBlockers: ${e.blockers||'—'}\nNext: ${e.next||'—'}\nTags: ${e.tags.join(', ')}`).join('\n\n---\n\n');
-  const prompt=`Write a ${typeMap[type]} for project "${name}". Use ALL data from the journal — do not omit any financial figures, vendor details, specs or decisions. Mark missing sections [ACTION REQUIRED: describe what's needed].${extra?'\n\nAdditional instructions: '+extra:''}\n\nJOURNAL DATA:\n${data}\n\nOutput complete professional Markdown.`;
-  document.getElementById('poc-status').style.display='flex';document.getElementById('btn-gen-poc').style.display='none';document.getElementById('poc-preview').style.display='none';
+  const data=entries.map(e=>`DATE: ${e.date} | AUTHOR: ${e.author} | TASK: ${e.task} | TYPE: ${e.type}
+Title: ${e.title}
+Summary: ${e.summary}
+Budget: ${e.budget||'—'} | Cost: ${e.cost||'—'} | Spent: ${e.spent||'—'}
+Cost detail: ${e.costdetail||'—'}
+Materials: ${e.materials||'—'}
+Vendors: ${e.vendors||'—'}
+Tech: ${e.tech||'—'}
+Decisions: ${e.decisions||'—'}
+Blockers: ${e.blockers||'—'}
+Next: ${e.next||'—'}
+Tags: ${e.tags.join(', ')}`).join('\n\n---\n\n');
+  const prompt=`Write a ${typeMap[type]} for project "${name}". Use ALL data from the journal — do not omit any financial figures, vendor details, specs or decisions. Mark missing sections [ACTION REQUIRED: describe what's needed].${extra?'\n\nAdditional instructions: '+extra:''}
+
+JOURNAL DATA:
+${data}
+
+Output complete professional Markdown.`;
+  document.getElementById('poc-status').style.display='flex';
+  document.getElementById('btn-gen-poc').style.display='none';
+  document.getElementById('poc-preview').style.display='none';
   try{
     const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const d=await r.json();pocText=d.content?.find(b=>b.type==='text')?.text||'';
     if(!pocText)throw new Error('Empty');
-    document.getElementById('poc-status').style.display='none';document.getElementById('poc-content').textContent=pocText;document.getElementById('poc-preview').style.display='block';document.getElementById('btn-push-poc').style.display='';
-  }catch{document.getElementById('poc-status').style.display='none';document.getElementById('btn-gen-poc').style.display='';showToast('Generation failed','#DC2626','#fff');}
+    document.getElementById('poc-status').style.display='none';
+    document.getElementById('poc-content').textContent=pocText;
+    document.getElementById('poc-preview').style.display='block';
+    document.getElementById('btn-push-poc').style.display=ghCfg?'':'none';
+    document.getElementById('btn-docx-poc').style.display='';
+  }catch{
+    document.getElementById('poc-status').style.display='none';
+    document.getElementById('btn-gen-poc').style.display='';
+    showToast('Generation failed','#EF4444','#fff');
+  }
 }
 
 async function pushPOCtoGH(){
@@ -632,41 +1452,71 @@ async function pushPOCtoGH(){
   const name=(document.getElementById('poc-name').value.trim()||'project').toLowerCase().replace(/\s+/g,'-');
   const type=document.getElementById('poc-type').value;
   const path=`${ghCfg.base}/_reports/${today}-${type}-${name}.md`;
-  try{const ex=await ghGet(path);await ghPut(path,pocText,ex?.sha||null,`report: ${type} — ${today}`);const url=`https://github.com/${ghCfg.repo}/blob/${ghCfg.branch}/${path}`;showToast('Report pushed to GitHub','#28A745','#fff');closePOC();document.getElementById('cstrip').classList.add('show');document.getElementById('cstrip-txt').innerHTML=`Report committed — <a href="${url}" target="_blank">View on GitHub</a>`;}
-  catch(err){showToast('Push failed: '+err.message,'#DC2626','#fff');}
+  try{
+    const ex=await ghGet(path);
+    await ghPut(path,pocText,ex?.sha||null,`report: ${type} — ${today}`);
+    const url=`https://github.com/${ghCfg.repo}/blob/${ghCfg.branch}/${path}`;
+    showToast('Report pushed to GitHub','#10B981','#fff');
+    closePOC();
+    document.getElementById('cstrip').classList.add('show');
+    document.getElementById('cstrip-txt').innerHTML=`Report committed — <a href="${url}" target="_blank">View on GitHub</a>`;
+  }catch(err){showToast('Push failed: '+err.message,'#EF4444','#fff');}
 }
 
+/* ════════════════════════════════════════════════════════════
+   PASTE PARSER (deterministic — no AI guesswork by default)
+   ════════════════════════════════════════════════════════════ */
 function parsePaste(){
   const txt=document.getElementById('f-paste').value.trim();if(!txt)return;
   const fmap={'title':'f-title','task':'f-task','summary':'f-summary','budget':'f-budget','cost incurred':'f-cost','cost this session':'f-cost','total spent':'f-spent','cost breakdown':'f-costdetail','quotes':'f-costdetail','materials':'f-materials','components':'f-materials','vendors':'f-vendors','dealers':'f-vendors','technical':'f-tech','specifications':'f-tech','decisions':'f-decisions','decision':'f-decisions','blockers':'f-blockers','open questions':'f-blockers','next steps':'f-next','dependencies':'f-deps','tags':'f-tags'};
-  const lines=txt.split('\n');let cur='',acc=[];
-  const commit=()=>{if(cur&&acc.length){const id=fmap[cur];if(id){const el=document.getElementById(id);if(el)el.value=acc.join('\n').trim();}}cur='';acc=[];};
+  const lines=txt.split('\n');let cur='',acc=[];let any=false;
+  const commit=()=>{if(cur&&acc.length){const id=fmap[cur];if(id){const el=document.getElementById(id);if(el){el.value=acc.join('\n').trim();any=true;}}}cur='';acc=[];};
   for(const line of lines){const l=line.trim();if(!l)continue;const c=l.indexOf(':');if(c>0){const k=l.slice(0,c).toLowerCase();if(fmap[k]!==undefined){commit();cur=k;const v=l.slice(c+1).trim();if(v)acc.push(v);continue;}}if(cur)acc.push(l);}
-  commit();document.getElementById('f-paste').value='';showToast('Parsed — review all fields','#0071E3','#fff');
+  commit();
+  if(any){
+    document.getElementById('f-paste').value='';
+    showToast('Parsed — review all fields','#2563EB','#fff');
+  }else{
+    // Fallback: ask Claude to structure
+    showToast('No fields matched — asking Claude to structure…','#8B5CF6','#fff');
+    aiStructure(txt).then(json=>{
+      const map={title:'f-title',task:'f-task',summary:'f-summary',budget:'f-budget',cost:'f-cost',spent:'f-spent',costdetail:'f-costdetail',materials:'f-materials',vendors:'f-vendors',tech:'f-tech',decisions:'f-decisions',blockers:'f-blockers',next:'f-next',deps:'f-deps'};
+      Object.entries(map).forEach(([k,id])=>{if(json[k]){const el=document.getElementById(id);if(el)el.value=json[k];}});
+      if(json.tags?.length)document.getElementById('f-tags').value=json.tags.join(', ');
+      document.getElementById('f-paste').value='';
+      showToast('Structured by Claude — review fields','#2563EB','#fff');
+    }).catch(()=>showToast('Could not parse — fill manually','#D97706','#fff'));
+  }
 }
 
 function clearForm(){['f-title','f-task','f-summary','f-budget','f-cost','f-spent','f-costdetail','f-materials','f-vendors','f-tech','f-decisions','f-blockers','f-next','f-deps','f-tags','f-paste'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-date').value=today;document.getElementById('f-type').value='work';}
 
 function setFilter(f,btn){currentFilter=f;document.querySelectorAll('.f-btn').forEach(b=>b.classList.remove('act'));if(btn)btn.classList.add('act');render();}
 
+/* ════════════════════════════════════════════════════════════
+   RENDER
+   ════════════════════════════════════════════════════════════ */
 function render(){
   const s=document.getElementById('srch').value.toLowerCase();
   const tl={work:'Work done',ideation:'Ideation',decision:'Decision',blocker:'Blocker',research:'Research'};
   let f=entries.filter(e=>{if(currentFilter!=='all'&&e.type!==currentFilter)return false;if(s){const b=[e.title,e.task,e.summary,e.author,e.budget,e.cost,e.materials,e.vendors,e.decisions,...e.tags].join(' ').toLowerCase();if(!b.includes(s))return false;}return true;});
   document.getElementById('ecount').textContent=`${f.length} entr${f.length===1?'y':'ies'}`;
   const c=document.getElementById('elist');
-  if(!f.length){c.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 16 16" fill="currentColor" width="20" height="20"><path d="M11.5 6.5a.75.75 0 0 1 .75.75v3.69l1.22-1.22a.75.75 0 0 1 1.06 1.06l-2.5 2.5a.75.75 0 0 1-1.06 0l-2.5-2.5a.75.75 0 1 1 1.06-1.06l1.22 1.22V7.25a.75.75 0 0 1 .75-.75zm-5.5 0a.75.75 0 0 1 .75.75v3.69l1.22-1.22a.75.75 0 0 1 1.06 1.06l-2.5 2.5a.75.75 0 0 1-1.06 0l-2.5-2.5a.75.75 0 1 1 1.06-1.06L6 10.69V7.25A.75.75 0 0 1 6 6.5z"/></svg></div><h3>No entries yet</h3><p>Fill in the session form above to log your first entry.</p></div>`;return;}
+  if(!f.length){
+    c.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 16 16" fill="currentColor" width="22" height="22"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25V1.75zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5H3.75zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011z"/></svg></div><h3>No entries yet</h3><p>Fill in the session form above to log your first entry.</p></div>`;
+    return;
+  }
   c.innerHTML=f.map(e=>{
     const tc=e.type==='work'?'work':e.type==='ideation'?'ideation':e.type==='decision'?'decision':e.type==='blocker'?'blocker':'research';
-    return `<div class="entry"><div class="e-bar ${tc}"></div><div class="ehdr"><div><div class="emeta"><span class="badge-date">${e.date}</span><span class="badge badge-type ${tc}">${tl[e.type]||e.type}</span>${e.author?`<span class="badge badge-author">${e.author}</span>`:''} ${e.task?`<span class="badge badge-task">${e.task}</span>`:''} ${e.synced?`<span class="sync-ok">Synced${e.ghUrl?` <a href="${e.ghUrl}" target="_blank">↗</a>`:''}</span>`:`<span class="sync-no">Local only</span>`}</div><div class="etitle">${e.title}</div></div><div class="e-acts">${!e.synced?`<button class="ico-btn gh-btn" onclick="syncEntry(${e.id})">Push to GH</button>`:''}<button class="ico-btn del" onclick="delEntry(${e.id})">Delete</button></div></div><div class="ebody">${e.summary?`<div class="e-field"><div class="e-lbl">Summary</div><div class="e-val">${e.summary}</div></div>`:''}${e.budget||e.cost||e.spent?`<div class="e-grid">${e.budget?`<div class="e-metric"><div class="e-lbl">Budget</div><div class="e-val">${e.budget}</div></div>`:''}${e.cost?`<div class="e-metric"><div class="e-lbl">Cost (session)</div><div class="e-val">${e.cost}</div></div>`:''}${e.spent?`<div class="e-metric"><div class="e-lbl">Total spent</div><div class="e-val">${e.spent}</div></div>`:''}</div>`:''}${e.costdetail?`<div class="e-field"><div class="e-lbl">Cost breakdown</div><div class="e-val">${e.costdetail}</div></div>`:''}${e.vendors?`<div class="e-field"><div class="e-lbl">Vendors & dealers</div><div class="e-val">${e.vendors}</div></div>`:''}${e.decisions?`<div class="e-field"><div class="e-lbl">Decisions</div><div class="e-val">${e.decisions}</div></div>`:''}${e.next?`<div class="e-field"><div class="e-lbl">Next steps</div><div class="e-val">${e.next}</div></div>`:''}${e.tags.length?`<div class="tag-row">${e.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>`:''}</div></div>`;
+    return `<div class="entry"><div class="e-bar ${tc}"></div><div class="ehdr"><div><div class="emeta"><span class="badge-date">${e.date}</span><span class="badge badge-type ${tc}">${tl[e.type]||e.type}</span>${e.author?`<span class="badge badge-author">${e.author}</span>`:''} ${e.task?`<span class="badge badge-task">${e.task}</span>`:''} ${e.synced?`<span class="sync-ok">● Synced${e.ghUrl?` <a href="${e.ghUrl}" target="_blank">↗</a>`:''}</span>`:`<span class="sync-no">Local only</span>`}</div><div class="etitle">${e.title}</div></div><div class="e-acts"><button class="ico-btn docx-btn" onclick="downloadEntryDocx(${e.id})">.docx</button>${!e.synced?`<button class="ico-btn gh-btn" onclick="syncEntry(${e.id})">Push</button>`:''}<button class="ico-btn del" onclick="delEntry(${e.id})">Delete</button></div></div><div class="ebody">${e.summary?`<div class="e-field"><div class="e-lbl">Summary</div><div class="e-val">${e.summary}</div></div>`:''}${e.budget||e.cost||e.spent?`<div class="e-grid">${e.budget?`<div class="e-metric"><div class="e-lbl">Budget</div><div class="e-val">${e.budget}</div></div>`:''}${e.cost?`<div class="e-metric"><div class="e-lbl">Cost (session)</div><div class="e-val">${e.cost}</div></div>`:''}${e.spent?`<div class="e-metric"><div class="e-lbl">Total spent</div><div class="e-val">${e.spent}</div></div>`:''}</div>`:''}${e.costdetail?`<div class="e-field"><div class="e-lbl">Cost breakdown</div><div class="e-val">${e.costdetail}</div></div>`:''}${e.vendors?`<div class="e-field"><div class="e-lbl">Vendors & dealers</div><div class="e-val">${e.vendors}</div></div>`:''}${e.decisions?`<div class="e-field"><div class="e-lbl">Decisions</div><div class="e-val">${e.decisions}</div></div>`:''}${e.next?`<div class="e-field"><div class="e-lbl">Next steps</div><div class="e-val">${e.next}</div></div>`:''}${e.tags.length?`<div class="tag-row">${e.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>`:''}</div></div>`;
   }).join('');
 }
 
 function stats(){document.getElementById('st-total').textContent=entries.length;document.getElementById('st-synced').textContent=entries.filter(e=>e.synced).length;document.getElementById('st-pending').textContent=entries.filter(e=>!e.synced).length;['work','decision','research','ideation','blocker'].forEach(t=>document.getElementById('st-'+t).textContent=entries.filter(e=>e.type===t).length);}
-function delEntry(id){if(!confirm('Delete this entry?'))return;entries=entries.filter(e=>e.id!==id);save();render();stats();showToast('Entry deleted','#DC2626','#fff');}
-function clearAll(){entries=[];save();render();stats();showToast('Cleared','#DC2626','#fff');}
+function delEntry(id){if(!confirm('Delete this entry?'))return;entries=entries.filter(e=>e.id!==id);save();render();stats();showToast('Entry deleted','#EF4444','#fff');}
+function clearAll(){entries=[];save();render();stats();showToast('Cleared','#EF4444','#fff');}
 function cstrip(e,url){const el=document.getElementById('cstrip');el.classList.add('show');document.getElementById('cstrip-txt').innerHTML=`Committed <strong>${e.author}/${taskSlug(e.task)}.md</strong> — <a href="${url}" target="_blank">View on GitHub</a>`;}
-function showToast(msg,bg='#28A745',color='#fff'){const t=document.getElementById('toast');t.textContent=msg;t.style.background=bg;t.style.color=color;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+function showToast(msg,bg='#10B981',color='#fff'){const t=document.getElementById('toast');t.textContent=msg;t.style.background=bg;t.style.color=color;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 
 load();
 </script>
