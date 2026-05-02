@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#090d12;--surface:#0d1117;--surface2:#111820;--border:#1c2435;--bl:#253040;
+  --accent:#00d4ff;--adim:rgba(0,212,255,0.07);
+  --tx:#bfcfdf;--txd:#4a5f72;--txb:#ddeaf8;
+  --gr:#00e5a0;--yw:#ffc84a;--rd:#ff5263;--pu:#9b72ff;--gh:#6e40c9;--or:#f97316;
+}
+body{background:var(--bg);color:var(--tx);font-family:'IBM Plex Sans',sans-serif;font-size:13px;min-height:100vh}
+
+/* HEADER */
+.hdr{border-bottom:1px solid var(--border);padding:11px 20px;display:flex;align-items:center;justify-content:space-between;background:var(--surface);position:sticky;top:0;z-index:200}
+.hdr-l{display:flex;align-items:center;gap:10px}
+.logo{width:26px;height:26px;border:1.5px solid var(--gh);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--gh)}
+.hdr h1{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--txb);letter-spacing:2px;text-transform:uppercase}
+.hdr-sub{font-size:9px;color:var(--txd);letter-spacing:1px;font-family:'IBM Plex Mono',monospace;margin-top:1px}
+.hdr-r{display:flex;gap:7px;align-items:center}
+.pill{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;padding:3px 9px;border:1px solid;text-transform:uppercase;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:4px}
+.pill.off{color:var(--gh);border-color:var(--gh)}
+.pill.on{color:var(--gr);border-color:var(--gr)}
+.pill.busy{color:var(--yw);border-color:var(--yw)}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:190px 1fr;min-height:calc(100vh - 52px)}
+
+/* SIDEBAR */
+.sb{border-right:1px solid var(--border);padding:12px 0;background:var(--surface);overflow-y:auto}
+.sb-s{padding:0 12px;margin-bottom:14px}
+.sb-l{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--txd);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.stat{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)}
+.stat:last-child{border-bottom:none}
+.stat span:first-child{color:var(--txd);font-size:11px}
+.sv{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent)}
+.sb-btn{width:100%;text-align:left;background:none;border:none;color:var(--txd);font-family:'IBM Plex Mono',monospace;font-size:9px;padding:5px 6px;cursor:pointer;letter-spacing:1px;text-transform:uppercase;border-radius:2px;display:flex;align-items:center;gap:5px;transition:all .15s;margin-bottom:1px}
+.sb-btn:hover,.sb-btn.act{background:var(--adim);color:var(--accent)}
+.dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.xbtn{width:100%;background:none;border:1px solid var(--border);color:var(--txd);font-family:'IBM Plex Mono',monospace;font-size:9px;padding:5px 8px;cursor:pointer;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:5px;margin-bottom:5px;text-align:left;transition:all .15s}
+.xbtn:hover{border-color:var(--accent);color:var(--accent)}
+.xbtn.gh:hover{border-color:var(--gh);color:var(--gh)}
+.xbtn.ai{border-color:rgba(155,114,255,.25);color:var(--pu)}
+.xbtn.ai:hover{border-color:var(--pu)}
+
+/* MAIN */
+.main{padding:16px 20px;overflow-y:auto;max-height:calc(100vh - 52px)}
+
+/* CFG PANEL */
+.cfg{background:var(--surface);border:1px solid rgba(110,64,201,.3);padding:14px;margin-bottom:14px;position:relative;display:none}
+.cfg.open{display:block}
+.cfg::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gh),transparent)}
+.cfg-t{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--gh);text-transform:uppercase;margin-bottom:11px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+.g1{margin-bottom:8px}
+.fg{display:flex;flex-direction:column;gap:3px}
+.fl{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--txd);letter-spacing:1px;text-transform:uppercase}
+input,select,textarea{background:var(--bg);border:1px solid var(--border);color:var(--txb);font-family:'IBM Plex Sans',sans-serif;font-size:12px;padding:5px 8px;outline:none;transition:border-color .15s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+select option{background:#0d1117}
+textarea{resize:vertical;font-size:12px;line-height:1.6}
+
+/* CAPTURE PANEL */
+.panel{background:var(--surface);border:1px solid var(--border);padding:14px;margin-bottom:16px;position:relative}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent)}
+.pt{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:11px}
+.tip{background:var(--adim);border:1px solid rgba(0,212,255,.1);padding:8px 11px;margin-bottom:11px;font-size:11px;color:var(--txd);line-height:1.6}
+.tip strong{color:var(--accent);font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:2px}
+
+/* STRUCTURED OUTPUT */
+.ai-out{background:var(--bg);border:1px solid rgba(155,114,255,.25);padding:14px;margin-top:12px;position:relative;display:none}
+.ai-out.show{display:block}
+.ai-out::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--pu),transparent)}
+.ai-out-t{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--pu);text-transform:uppercase;margin-bottom:11px;display:flex;align-items:center;gap:7px}
+.domain-badge{font-family:'IBM Plex Mono',monospace;font-size:8px;padding:2px 7px;border:1px solid var(--pu);color:var(--pu);letter-spacing:1px;text-transform:uppercase}
+.tag-cloud{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.atag{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 7px;background:rgba(155,114,255,.1);color:var(--pu);border:1px solid rgba(155,114,255,.2);cursor:pointer;transition:all .15s}
+.atag:hover{background:rgba(155,114,255,.2)}
+.atag.rm{opacity:.4;text-decoration:line-through}
+.sec-block{border:1px solid var(--border);margin-bottom:8px}
+.sec-hd{background:var(--surface2);padding:6px 10px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid var(--border)}
+.sec-hd-t{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--txb)}
+.sec-hd-icon{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txd)}
+.sec-body{padding:8px 10px;font-size:12px;line-height:1.7;color:var(--tx);white-space:pre-wrap;display:block}
+.sec-body.hide{display:none}
+
+/* BUTTONS */
+.btn{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:6px 13px;cursor:pointer;border:none;transition:all .15s}
+.bp{background:var(--accent);color:#000;font-weight:600}.bp:hover{background:#00b8d9}
+.bs{background:transparent;border:1px solid var(--bl);color:var(--txd)}.bs:hover{border-color:var(--accent);color:var(--accent)}
+.bgh{background:var(--gh);color:#fff;font-weight:600}.bgh:hover{background:#5a30b5}
+.bai{background:var(--pu);color:#fff;font-weight:600}.bai:hover{background:#8055e8}
+.brow{display:flex;gap:6px;justify-content:flex-end;margin-top:11px;flex-wrap:wrap}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* COMMIT STRIP */
+.cs{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txd);padding:6px 10px;background:rgba(110,64,201,.06);border:1px solid rgba(110,64,201,.15);margin-bottom:12px;display:none}
+.cs.show{display:block}
+.cs a{color:var(--gh);text-decoration:none}.cs a:hover{text-decoration:underline}
+
+/* ENTRY LIST */
+.elst-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.elst-t{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--txd);letter-spacing:2px;text-transform:uppercase}
+.ec{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent)}
+.sr{display:flex;gap:6px;margin-bottom:12px}
+.sr input{flex:1;background:var(--surface)}
+.entry{background:var(--surface);border:1px solid var(--border);margin-bottom:9px;position:relative;overflow:hidden}
+.ebar{position:absolute;left:0;top:0;bottom:0;width:3px}
+.ehdr{padding:9px 11px 8px 15px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;border-bottom:1px solid var(--border)}
+.emeta{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.edate{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txd)}
+.ebadge{font-family:'IBM Plex Mono',monospace;font-size:8px;padding:2px 5px;letter-spacing:1px;text-transform:uppercase;border:1px solid}
+.eauth{font-family:'IBM Plex Mono',monospace;font-size:8px;padding:2px 5px;color:var(--txd);border:1px solid var(--border)}
+.edomain{font-family:'IBM Plex Mono',monospace;font-size:8px;padding:2px 5px;background:rgba(249,115,22,.08);color:var(--or);border:1px solid rgba(249,115,22,.2)}
+.esync{font-family:'IBM Plex Mono',monospace;font-size:8px}
+.esync.ok{color:var(--gr)}.esync.no{color:var(--yw)}
+.etitle{font-size:13px;font-weight:500;color:var(--txb);margin-top:2px}
+.eacts{display:flex;gap:4px;flex-shrink:0}
+.ibtn{background:none;border:1px solid var(--border);color:var(--txd);font-size:9px;padding:3px 6px;cursor:pointer;font-family:'IBM Plex Mono',monospace;transition:all .15s}
+.ibtn:hover{border-color:var(--rd);color:var(--rd)}
+.ibtn.sync:hover{border-color:var(--gh);color:var(--gh)}
+.ebody{padding:10px 11px 10px 15px}
+.esl{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--txd);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2px;margin-top:7px}
+.esl:first-child{margin-top:0}
+.etxt{font-size:12px;line-height:1.6;color:var(--tx);white-space:pre-wrap}
+.etag-row{display:flex;gap:3px;flex-wrap:wrap;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)}
+.etag{font-family:'IBM Plex Mono',monospace;font-size:8px;padding:2px 5px;background:var(--adim);color:var(--accent)}
+.type-work{color:var(--gr);border-color:var(--gr)}.bar-work{background:var(--gr)}
+.type-ideation{color:var(--accent);border-color:var(--accent)}.bar-ideation{background:var(--accent)}
+.type-decision{color:var(--yw);border-color:var(--yw)}.bar-decision{background:var(--yw)}
+.type-blocker{color:var(--rd);border-color:var(--rd)}.bar-blocker{background:var(--rd)}
+.type-research{color:var(--pu);border-color:var(--pu)}.bar-research{background:var(--pu)}
+.empty{text-align:center;padding:36px;border:1px dashed var(--border);color:var(--txd);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px}
+
+.toast{position:fixed;bottom:14px;right:14px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;padding:7px 12px;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;z-index:999;max-width:310px}
+.toast.show{opacity:1;transform:translateY(0)}
+.spin{display:inline-block;width:8px;height:8px;border:1.5px solid rgba(255,255,255,.15);border-top-color:currentColor;border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+.analyzing{display:none;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--pu);padding:10px 0}
+.analyzing.show{display:flex}
+code{font-family:'IBM Plex Mono',monospace;font-size:11px;background:rgba(255,255,255,.05);padding:1px 5px;color:var(--accent)}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-l">
+    <div class="logo">GH</div>
+    <div>
+      <h1>Smart Project Journal</h1>
+      <div class="hdr-sub">AI Structures · GitHub Pushes · Always Current</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div id="gh-pill" class="pill off" onclick="toggleCfg()">⬡ Connect GitHub</div>
+  </div>
+</div>
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+<div class="sb">
+  <div class="sb-s">
+    <div class="sb-l">Stats</div>
+    <div class="stat"><span>Total</span><span class="sv" id="st-total">0</span></div>
+    <div class="stat"><span>Synced</span><span class="sv" style="color:var(--gr)" id="st-synced">0</span></div>
+    <div class="stat"><span>Pending</span><span class="sv" style="color:var(--yw)" id="st-pend">0</span></div>
+    <div class="stat"><span>Members</span><span class="sv" id="st-mem">0</span></div>
+    <div class="stat"><span>Tasks</span><span class="sv" id="st-tasks">0</span></div>
+  </div>
+  <div class="sb-s">
+    <div class="sb-l">Filter</div>
+    <button class="sb-btn act" onclick="setF('all',this)"><span class="dot"></span>All</button>
+    <button class="sb-btn" onclick="setF('work',this)"><span class="dot" style="color:var(--gr)"></span>Work Done</button>
+    <button class="sb-btn" onclick="setF('ideation',this)"><span class="dot" style="color:var(--accent)"></span>Ideation</button>
+    <button class="sb-btn" onclick="setF('decision',this)"><span class="dot" style="color:var(--yw)"></span>Decision</button>
+    <button class="sb-btn" onclick="setF('blocker',this)"><span class="dot" style="color:var(--rd)"></span>Blocker</button>
+    <button class="sb-btn" onclick="setF('research',this)"><span class="dot" style="color:var(--pu)"></span>Research</button>
+  </div>
+  <div class="sb-s">
+    <div class="sb-l">GitHub</div>
+    <button class="xbtn gh" onclick="pushAllPending()"><span>↑</span>Push All Pending</button>
+    <button class="xbtn gh" onclick="openRepo()"><span>⎋</span>Open Repo</button>
+  </div>
+  <div class="sb-s">
+    <div class="sb-l">Generate</div>
+    <button class="xbtn ai" onclick="genPOC()">✦ POC Document</button>
+  </div>
+  <div class="sb-s">
+    <div class="sb-l">Manage</div>
+    <button class="sb-btn" onclick="if(confirm('Clear all local?'))clearAll()"><span class="dot" style="color:var(--rd)"></span>Clear Local</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- GitHub Config -->
+  <div class="cfg" id="cfg">
+    <div class="cfg-t">⬡ GitHub Configuration</div>
+    <div class="tip" style="margin-bottom:10px">
+      <strong>📁 Auto Folder Structure</strong>
+      <code>journal/{member}/{task-slug}.md</code> — each session merges into the task's living doc. AI tallies old vs new data and keeps everything.
+    </div>
+    <div class="g2">
+      <div class="fg"><span class="fl">Personal Access Token (repo scope)</span><input type="password" id="gh-tok" placeholder="ghp_xxxxxxxxxxxx"></div>
+      <div class="fg"><span class="fl">Repository (owner/repo)</span><input id="gh-repo" placeholder="org/avionics-project"></div>
+      <div class="fg"><span class="fl">Branch</span><input id="gh-br" value="main"></div>
+      <div class="fg"><span class="fl">Base Folder</span><input id="gh-base" value="journal"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+      <span id="cfg-st" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--txd)"></span>
+      <div style="display:flex;gap:6px">
+        <button class="btn bs" onclick="toggleCfg()">Cancel</button>
+        <button class="btn bs" onclick="testGH()">Test</button>
+        <button class="btn bgh" onclick="saveGH()">Save & Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Commit strip -->
+  <div class="cs" id="cs"></div>
+
+  <!-- CAPTURE PANEL -->
+  <div class="panel">
+    <div class="pt">▸ Session Capture</div>
+    <div class="tip">
+      <strong>💡 How to use</strong>
+      Dump everything you did in the Raw Notes field — costs, part numbers, vendor names, specs, decisions, whatever. No format required. Click <strong>✦ Analyse</strong> and Claude will read the context, figure out what kind of task it is, structure it properly, and generate the right tags automatically.
+    </div>
+
+    <div class="g4" style="margin-bottom:8px">
+      <div class="fg"><span class="fl">Your Name</span><input id="f-author" placeholder="e.g. Deeraj"></div>
+      <div class="fg"><span class="fl">Date</span><input type="date" id="f-date"></div>
+      <div class="fg"><span class="fl">Task / Module Name</span><input id="f-task" placeholder="e.g. Battery Pack Design"></div>
+      <div class="fg"><span class="fl">Type</span>
+        <select id="f-type">
+          <option value="work">Work Done</option>
+          <option value="ideation">Ideation</option>
+          <option value="decision">Decision</option>
+          <option value="research">Research</option>
+          <option value="blocker">Blocker</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="g1">
+      <div class="fg">
+        <span class="fl">Raw Session Notes — dump everything, no format required</span>
+        <textarea id="f-raw" style="min-height:140px" placeholder="Examples of what to write here:
+
+→ Battery: Looked at Li-NMC cells from EVE Energy. 50Ah, 3.65V nominal. Got quote from Encon India Pvt Ltd, Mumbai — ₹4,200/cell, MOQ 10. Lead time 3 weeks. Also checked Everon but their price was ₹4,800 with 6 week lead. Decided on EVE via Encon. Need to confirm BMS compatibility with Orion BMS2.
+
+→ Airframe: Reviewed CFRP layup schedule with structural team. Decided on 8-ply [0/45/-45/90]s for main spar. Vendor Hindoostan Mills can supply prepreg at ₹12,500/kg. Need 14kg for prototype.
+
+→ Avionics: Discussed DO-178C DAL-B compliance path for flight management module. RTCA DO-254 applies to FPGA. Using NXP S32K344 MCU. Asked Elbit for quote on ARINC 429 transceiver.
+
+Write whatever you have — AI will structure it correctly."></textarea>
+      </div>
+    </div>
+
+    <div class="analyzing" id="analysing">
+      <div class="spin"></div>
+      <span id="anlz-txt">Claude is reading your notes and structuring them...</span>
+    </div>
+
+    <!-- AI Structured Output -->
+    <div class="ai-out" id="ai-out">
+      <div class="ai-out-t">
+        ✦ AI Structured Output
+        <span class="domain-badge" id="out-domain">—</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--txd);margin-left:auto">click sections to expand/collapse</span>
+      </div>
+      <div class="fl" style="margin-bottom:5px">Auto-generated tags (click to remove)</div>
+      <div class="tag-cloud" id="out-tags"></div>
+      <div id="out-sections"></div>
+      <div class="brow">
+        <button class="btn bs" onclick="reanalyse()">↺ Re-analyse</button>
+        <button class="btn bs" onclick="document.getElementById('ai-out').classList.remove('show')">Clear</button>
+        <button class="btn bgh" id="btn-push" onclick="saveAndPush()">↑ Push to GitHub</button>
+      </div>
+    </div>
+
+    <div class="brow" id="analyse-row">
+      <button class="btn bs" onclick="clearForm()">Clear</button>
+      <button class="btn bai" onclick="analyseNotes()">✦ Analyse & Structure</button>
+    </div>
+  </div>
+
+  <!-- ENTRY LIST -->
+  <div class="elst-hdr">
+    <span class="elst-t">Session Log</span>
+    <span class="ec" id="ecount">0 entries</span>
+  </div>
+  <div class="sr"><input id="srch" placeholder="Search by task, author, domain, tag, vendor, spec..." oninput="render()"></div>
+  <div id="elist"></div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let entries=[], ghCfg=null, curF='all', curAnalysis=null;
+const today=new Date().toISOString().split('T')[0];
+document.getElementById('f-date').value=today;
+
+// ── Storage ──────────────────────────────────────────────────────────────────
+async function load(){
+  try{
+    const[e,c,a]=await Promise.all([
+      window.storage.get('smj-entries').catch(()=>null),
+      window.storage.get('smj-config').catch(()=>null),
+      window.storage.get('smj-author').catch(()=>null),
+    ]);
+    entries=e?JSON.parse(e.value):[];
+    if(c){ghCfg=JSON.parse(c.value);updatePill(true);loadCfgF();}
+    if(a)document.getElementById('f-author').value=a.value;
+  }catch{entries=[];}
+  render();stats();
+}
+async function savE(){try{await window.storage.set('smj-entries',JSON.stringify(entries));}catch{}}
+
+// ── Config ───────────────────────────────────────────────────────────────────
+function toggleCfg(){document.getElementById('cfg').classList.toggle('open');document.getElementById('cfg-st').textContent='';}
+function loadCfgF(){if(!ghCfg)return;document.getElementById('gh-repo').value=ghCfg.repo||'';document.getElementById('gh-br').value=ghCfg.branch||'main';document.getElementById('gh-base').value=ghCfg.base||'journal';}
+function saveGH(){
+  const tok=document.getElementById('gh-tok').value.trim(),repo=document.getElementById('gh-repo').value.trim();
+  if(!tok||!repo){toast('Token and Repo required','var(--yw)');return;}
+  ghCfg={token:tok,repo,branch:document.getElementById('gh-br').value.trim()||'main',base:document.getElementById('gh-base').value.trim()||'journal'};
+  window.storage.set('smj-config',JSON.stringify(ghCfg));
+  updatePill(true);toggleCfg();toast('GitHub connected ✓');
+}
+async function testGH(){
+  const tok=document.getElementById('gh-tok').value.trim(),repo=document.getElementById('gh-repo').value.trim();
+  const el=document.getElementById('cfg-st');el.textContent='Testing…';el.style.color='var(--txd)';
+  try{
+    const r=await fetch(`https://api.github.com/repos/${repo}`,{headers:ghH(tok)});
+    const d=await r.json();
+    if(r.ok){el.textContent=`✓ ${d.full_name}`;el.style.color='var(--gr)';}
+    else{el.textContent=`✗ ${d.message}`;el.style.color='var(--rd)';}
+  }catch{el.textContent='✗ Network error';el.style.color='var(--rd)';}
+}
+function updatePill(on,busy=false){
+  const p=document.getElementById('gh-pill');
+  p.className='pill '+(busy?'busy':on?'on':'off');
+  p.textContent=busy?'⬡ Syncing…':on?`⬡ ${ghCfg?.repo||'Connected'}`:'⬡ Connect GitHub';
+}
+function openRepo(){if(ghCfg)window.open(`https://github.com/${ghCfg.repo}`,'_blank');}
+
+// ── GitHub API ────────────────────────────────────────────────────────────────
+function ghH(tok){return{'Authorization':`token ${tok||ghCfg?.token}`,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'};}
+async function ghGet(path){
+  const r=await fetch(`https://api.github.com/repos/${ghCfg.repo}/contents/${path}?ref=${ghCfg.branch}`,{headers:ghH()});
+  if(r.status===404)return null;if(!r.ok)throw new Error(`GH ${r.status}`);return r.json();
+}
+async function ghPut(path,content,sha,msg){
+  const r=await fetch(`https://api.github.com/repos/${ghCfg.repo}/contents/${path}`,{
+    method:'PUT',headers:ghH(),
+    body:JSON.stringify({message:msg,content:btoa(unescape(encodeURIComponent(content))),branch:ghCfg.branch,...(sha?{sha}:{})}),
+  });
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.message||`GH PUT ${r.status}`);}
+  return r.json();
+}
+function slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');}
+function mpath(author,task){return`${ghCfg.base}/${slug(author)}/${slug(task)}.md`;}
+
+// ── AI ANALYSE ────────────────────────────────────────────────────────────────
+async function analyseNotes(){
+  const raw=document.getElementById('f-raw').value.trim();
+  const task=document.getElementById('f-task').value.trim();
+  const author=document.getElementById('f-author').value.trim();
+  if(!raw||!task||!author){toast('Name, Task and Notes required','var(--yw)');return;}
+
+  document.getElementById('analysing').classList.add('show');
+  document.getElementById('analyse-row').style.display='none';
+  document.getElementById('ai-out').classList.remove('show');
+
+  const prompt=`You are an expert aerospace/avionics project documentation analyst.
+
+A team member has provided raw session notes. Your job is to:
+1. Read the notes and determine the domain(s) involved
+2. Structure the information into the most relevant sections for that domain
+3. Generate precise tags
+4. Extract ALL data — no omissions, especially numbers, vendor names, part numbers, costs, specs
+
+Raw notes from ${author} on task "${task}":
+${raw}
+
+Respond ONLY with a JSON object in this exact structure:
+{
+  "title": "one-line session title",
+  "domain": "primary domain label e.g. Electrical/Battery, Airframe/Structures, Avionics/Software, Propulsion, Procurement, Regulatory/Compliance, Systems Integration, Ground Support, etc.",
+  "type": "work|ideation|decision|research|blocker",
+  "tags": ["array", "of", "precise", "tags", "max 10", "auto-derived from content"],
+  "sections": [
+    {
+      "heading": "section name relevant to this domain e.g. Battery Specifications, Vendor Quotes, Structural Analysis, DO-178C Compliance, etc.",
+      "content": "full detailed content — all numbers, names, specs, decisions — nothing summarized"
+    }
+  ],
+  "key_decisions": "decisions made this session with full rationale",
+  "next_steps": "concrete next steps with owner and deadline if mentioned",
+  "financial_summary": "any costs, quotes, budgets mentioned — leave blank if none"
+}
+
+Generate 3-8 sections appropriate for the domain. Section names should reflect the actual content, not generic labels.`;
+
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]}),
+    });
+    const d=await r.json();
+    const txt=d.content?.find(b=>b.type==='text')?.text||'';
+    const clean=txt.replace(/```json|```/g,'').trim();
+    const parsed=JSON.parse(clean);
+    curAnalysis={...parsed,author,task,date:document.getElementById('f-date').value||today,rawNotes:raw,type:parsed.type||document.getElementById('f-type').value};
+    renderAnalysis(parsed);
+  }catch(err){
+    toast('Analysis failed — check console','var(--rd)');console.error(err);
+    document.getElementById('analyse-row').style.display='';
+  }
+  document.getElementById('analysing').classList.remove('show');
+}
+
+function renderAnalysis(p){
+  document.getElementById('out-domain').textContent=p.domain||'General';
+  // tags
+  const tc=document.getElementById('out-tags');
+  tc.innerHTML=(p.tags||[]).map(t=>`<span class="atag" onclick="this.classList.toggle('rm')">${t}</span>`).join('');
+  // sections
+  const sc=document.getElementById('out-sections');
+  const allSecs=[
+    ...( p.sections||[]),
+    ...(p.key_decisions?[{heading:'Key Decisions & Rationale',content:p.key_decisions}]:[]),
+    ...(p.next_steps?[{heading:'Next Steps',content:p.next_steps}]:[]),
+    ...(p.financial_summary?[{heading:'Financial Summary',content:p.financial_summary}]:[]),
+  ];
+  sc.innerHTML=allSecs.map((s,i)=>`
+    <div class="sec-block">
+      <div class="sec-hd" onclick="toggleSec(${i})">
+        <span class="sec-hd-t">${s.heading}</span>
+        <span class="sec-hd-icon" id="sec-ic-${i}">▾</span>
+      </div>
+      <div class="sec-body" id="sec-b-${i}">${s.content}</div>
+    </div>`).join('');
+  document.getElementById('ai-out').classList.add('show');
+  document.getElementById('analyse-row').style.display='';
+}
+
+function toggleSec(i){
+  const b=document.getElementById(`sec-b-${i}`),ic=document.getElementById(`sec-ic-${i}`);
+  b.classList.toggle('hide');ic.textContent=b.classList.contains('hide')?'▸':'▾';
+}
+function reanalyse(){document.getElementById('ai-out').classList.remove('show');curAnalysis=null;analyseNotes();}
+
+// ── Save & Push ───────────────────────────────────────────────────────────────
+async function saveAndPush(){
+  if(!curAnalysis){toast('Analyse first','var(--yw)');return;}
+  if(!ghCfg){toast('Connect GitHub first','var(--yw)');return;}
+
+  // get active tags (not removed)
+  const activeTags=[...document.querySelectorAll('#out-tags .atag:not(.rm)')].map(t=>t.textContent);
+
+  // get section content from DOM (user may have edited)
+  const sectionEls=document.querySelectorAll('#out-sections .sec-block');
+  const sections=[...sectionEls].map(el=>({
+    heading:el.querySelector('.sec-hd-t').textContent,
+    content:el.querySelector('.sec-body').textContent,
+  }));
+
+  const entry={
+    id:Date.now(),
+    date:curAnalysis.date,
+    author:curAnalysis.author,
+    task:curAnalysis.task,
+    type:curAnalysis.type,
+    title:curAnalysis.title,
+    domain:curAnalysis.domain,
+    tags:activeTags,
+    sections,
+    rawNotes:curAnalysis.rawNotes,
+    synced:false,ghUrl:null,
+  };
+
+  entries.unshift(entry);
+  updatePill(true,true);
+
+  try{
+    const path=mpath(entry.author,entry.task);
+    const existing=await ghGet(path);
+    let content,msg;
+
+    if(existing){
+      const oldDoc=decodeURIComponent(escape(atob(existing.content.replace(/\n/g,''))));
+      toast('Merging with existing doc…','var(--pu)');
+      content=await aiMerge(oldDoc,entry);
+      msg=`journal(${entry.author}): update ${entry.task} [${entry.date}]`;
+      await ghPut(path,content,existing.sha,msg);
+    }else{
+      content=buildMD(entry);
+      msg=`journal(${entry.author}): create ${entry.task} [${entry.date}]`;
+      await ghPut(path,content,null,msg);
+    }
+
+    entries[0].synced=true;
+    entries[0].ghUrl=`https://github.com/${ghCfg.repo}/blob/${ghCfg.branch}/${path}`;
+    showCS(path,entries[0].ghUrl);
+    toast('Pushed to GitHub ✓');
+    document.getElementById('ai-out').classList.remove('show');
+    curAnalysis=null;
+    clearForm();
+  }catch(err){toast('Push failed: '+err.message,'var(--rd)');console.error(err);}
+
+  updatePill(true,false);
+  try{await window.storage.set('smj-author',entry.author);}catch{}
+  await savE();render();stats();
+}
+
+async function aiMerge(oldDoc,entry){
+  const newContent=entry.sections.map(s=>`### ${s.heading}\n${s.content}`).join('\n\n');
+  const prompt=`You are an aerospace project documentation expert.
+
+Merge the EXISTING document with the NEW SESSION data for task "${entry.task}".
+
+Rules:
+- Keep ALL existing data. Update only where new data explicitly supersedes (show both with dates where values changed)
+- Tally old vs new costs/quotes: show original and new side by side
+- Add new vendors alongside old ones — never delete previous contacts
+- Integrate new specs with old specs — show evolution
+- Keep full pin-to-pin detail — no summarizing
+- Output clean Markdown only
+
+EXISTING DOCUMENT:
+${oldDoc}
+
+NEW SESSION (${entry.date} by ${entry.author} | Domain: ${entry.domain}):
+${newContent}
+
+Tags: ${entry.tags.join(', ')}
+
+Output ONLY the merged Markdown document.`;
+
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+  const d=await r.json();
+  return d.content?.find(b=>b.type==='text')?.text||buildMD(entry);
+}
+
+function buildMD(e){
+  let md=`# ${e.task}\n\n`;
+  md+=`**Domain:** ${e.domain} | **Author:** ${e.author} | **Last Updated:** ${e.date}\n`;
+  md+=`**Tags:** ${e.tags.join(', ')}\n\n---\n\n`;
+  md+=`## Session: ${e.date} — ${e.title}\n\n`;
+  e.sections.forEach(s=>{md+=`### ${s.heading}\n${s.content}\n\n`;});
+  return md;
+}
+
+// ── Push all pending ──────────────────────────────────────────────────────────
+async function pushAllPending(){
+  if(!ghCfg){toast('Connect GitHub first','var(--yw)');return;}
+  const pend=entries.filter(e=>!e.synced);
+  if(!pend.length){toast('All synced ✓');return;}
+  updatePill(true,true);
+  for(const e of pend){
+    try{
+      const path=mpath(e.author,e.task);
+      const ex=await ghGet(path);
+      let content=buildMD(e),sha=null;
+      if(ex){const old=decodeURIComponent(escape(atob(ex.content.replace(/\n/g,''))));content=await aiMerge(old,e);sha=ex.sha;}
+      await ghPut(path,content,sha,`journal(${e.author}): ${e.task} [${e.date}]`);
+      e.synced=true;e.ghUrl=`https://github.com/${ghCfg.repo}/blob/${ghCfg.branch}/${path}`;
+    }catch(err){console.error(err);}
+  }
+  await savE();updatePill(true,false);render();stats();
+  toast(`${pend.length} entries pushed ✓`);
+}
+
+// ── POC ───────────────────────────────────────────────────────────────────────
+async function genPOC(){
+  if(!entries.length){toast('Add entries first','var(--yw)');return;}
+  const name=prompt('Project name:','Aerospace Project');if(!name)return;
+  const extra=prompt('Additional instructions for Claude (or leave blank):','');
+  toast('Generating POC…','var(--pu)');
+
+  const data=entries.map(e=>`
+TASK: ${e.task} | AUTHOR: ${e.author} | DATE: ${e.date} | DOMAIN: ${e.domain} | TYPE: ${e.type}
+TITLE: ${e.title}
+TAGS: ${e.tags.join(', ')}
+${e.sections.map(s=>`${s.heading.toUpperCase()}:\n${s.content}`).join('\n\n')}`).join('\n\n========\n\n');
+
+  const prompt2=`Write a comprehensive Proof of Concept document for the aerospace project "${name}".
+
+Use ALL data from the journal. Include every vendor name, cost figure, spec, part number, and decision. Do not summarize or omit anything.
+
+${extra?`Additional instructions: ${extra}\n\n`:''}Where information is missing or incomplete, mark clearly as: [ACTION REQUIRED: describe what is needed]
+
+JOURNAL DATA:
+${data}
+
+Format as professional Markdown with clear sections. Be exhaustive.`;
+
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt2}]})});
+    const d=await r.json();
+    const txt=d.content?.find(b=>b.type==='text')?.text||'';
+    if(!txt)throw new Error('Empty');
+
+    if(ghCfg&&confirm('Push POC to GitHub?')){
+      const path=`${ghCfg.base}/_reports/${today}-poc-${slug(name)}.md`;
+      const ex=await ghGet(path);
+      await ghPut(path,txt,ex?.sha||null,`report: POC ${name} [${today}]`);
+      const url=`https://github.com/${ghCfg.repo}/blob/${ghCfg.branch}/${path}`;
+      showCS(path,url);toast('POC pushed to GitHub ✓');
+    }else{
+      const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([txt],{type:'text/markdown'})),download:`POC-${slug(name)}-${today}.md`});a.click();
+      toast('POC downloaded ✓');
+    }
+  }catch(err){toast('POC failed','var(--rd)');console.error(err);}
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function setF(f,btn){curF=f;document.querySelectorAll('.sb-btn').forEach(b=>b.classList.remove('act'));if(btn)btn.classList.add('act');render();}
+
+function render(){
+  const s=document.getElementById('srch').value.toLowerCase();
+  const tl={work:'Work Done',ideation:'Ideation',decision:'Decision',blocker:'Blocker',research:'Research'};
+  let f=entries.filter(e=>{
+    if(curF!=='all'&&e.type!==curF)return false;
+    if(s){const b=[e.title,e.task,e.author,e.domain,...(e.tags||[]),...(e.sections||[]).map(x=>x.content)].join(' ').toLowerCase();if(!b.includes(s))return false;}
+    return true;
+  });
+  document.getElementById('ecount').textContent=`${f.length} entr${f.length===1?'y':'ies'}`;
+  const c=document.getElementById('elist');
+  if(!f.length){c.innerHTML=`<div class="empty">◈<br>No entries yet. Fill in the form above and click Analyse.</div>`;return;}
+  c.innerHTML=f.map(e=>`
+    <div class="entry">
+      <div class="ebar bar-${e.type}"></div>
+      <div class="ehdr">
+        <div>
+          <div class="emeta">
+            <span class="edate">${e.date}</span>
+            <span class="ebadge type-${e.type}">${tl[e.type]||e.type}</span>
+            ${e.author?`<span class="eauth">${e.author}</span>`:''}
+            ${e.domain?`<span class="edomain">${e.domain}</span>`:''}
+            <span class="esync ${e.synced?'ok':'no'}">${e.synced?`⬡ GH${e.ghUrl?` <a href="${e.ghUrl}" target="_blank" style="color:var(--gr);text-decoration:none;font-size:9px">↗</a>`:''}`:'○ pending'}</span>
+          </div>
+          <div class="etitle">${e.title||e.task}</div>
+        </div>
+        <div class="eacts">
+          ${!e.synced?`<button class="ibtn sync" onclick="syncOne(${e.id})">↑ GH</button>`:''}
+          <button class="ibtn" onclick="delE(${e.id})">✕</button>
+        </div>
+      </div>
+      <div class="ebody">
+        ${(e.sections||[]).slice(0,3).map(s=>`<div class="esl">${s.heading}</div><div class="etxt">${s.content.slice(0,200)}${s.content.length>200?'…':''}</div>`).join('')}
+        ${e.tags?.length?`<div class="etag-row">${e.tags.map(t=>`<span class="etag">${t}</span>`).join('')}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function stats(){
+  document.getElementById('st-total').textContent=entries.length;
+  document.getElementById('st-synced').textContent=entries.filter(e=>e.synced).length;
+  document.getElementById('st-pend').textContent=entries.filter(e=>!e.synced).length;
+  document.getElementById('st-mem').textContent=new Set(entries.map(e=>e.author)).size;
+  document.getElementById('st-tasks').textContent=new Set(entries.map(e=>e.task)).size;
+}
+
+async function syncOne(id){
+  if(!ghCfg){toast('Connect GitHub first','var(--yw)');return;}
+  const e=entries.find(x=>x.id===id);if(!e)return;
+  updatePill(true,true);
+  try{
+    const path=mpath(e.author,e.task);const ex=await ghGet(path);
+    let content=buildMD(e),sha=null;
+    if(ex){const old=decodeURIComponent(escape(atob(ex.content.replace(/\n/g,''))));content=await aiMerge(old,e);sha=ex.sha;}
+    await ghPut(path,content,sha,`journal(${e.author}): ${e.task} [${e.date}]`);
+    e.synced=true;e.ghUrl=`https://github.com/${ghCfg.repo}/blob/${ghCfg.branch}/${path}`;
+    await savE();render();stats();showCS(path,e.ghUrl);toast('Synced ✓');
+  }catch(err){toast('Sync failed: '+err.message,'var(--rd)');}
+  updatePill(true,false);
+}
+
+function delE(id){if(!confirm('Delete?'))return;entries=entries.filter(e=>e.id!==id);savE();render();stats();toast('Deleted','var(--rd)');}
+function clearAll(){entries=[];savE();render();stats();toast('Cleared','var(--rd)');}
+function clearForm(){['f-raw','f-task'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-date').value=today;document.getElementById('f-type').value='work';document.getElementById('ai-out').classList.remove('show');curAnalysis=null;}
+function showCS(path,url){const el=document.getElementById('cs');el.innerHTML=`▸ Pushed: <strong>${path}</strong> · <a href="${url}" target="_blank">View on GitHub →</a>`;el.classList.add('show');}
+function toast(msg,color='var(--gr)'){const t=document.getElementById('toast');t.textContent=msg;t.style.background=color;t.style.color=color==='var(--yw)'||color==='var(--accent)'?'#000':'#fff';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
+
+load();
+</script>
+</body>
+</html>
